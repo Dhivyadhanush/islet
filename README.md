@@ -40,20 +40,16 @@ with no Electron, no web views and no analytics.
 
 ```bash
 brew tap dhivyadhanush/islet
+brew trust dhivyadhanush/islet
 brew install --cask islet
 ```
 
-Or in one line:
+On the first launch, right-click **Islet** in Applications and choose **Open**.
+The app is ad-hoc signed, so macOS will not accept a double-click until you
+approve it once. If macOS still blocks it, run:
 
 ```bash
-brew install --cask dhivyadhanush/islet/islet
-```
-
-The app is ad-hoc signed. If macOS blocks the first launch, remove the
-quarantine flag once:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Islet.app
+sudo xattr -dr com.apple.quarantine /Applications/Islet.app
 open /Applications/Islet.app
 ```
 
