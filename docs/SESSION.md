@@ -172,3 +172,32 @@ Current state:
 - Screen Time remains a local frontmost-app estimate.
 - Server status remains a placeholder; `ServerStatusService.check()` is the
   integration point.
+
+## Phase 4 — Beszel server integration (7 Nov 2026)
+
+Request: explain how the server monitor runs on the domain and wire it into the
+island.
+
+- Added `BeszelClient`: PocketBase auth, `systems` list, latest `system_stats`,
+  optional Cloudflare Access service-token headers. It caches the auth token for
+  10 minutes and retries once on 401.
+- Added `Keychain` for the Beszel password and Access secret; URL/email/client ID
+  live in UserDefaults.
+- `ServerStatusService` polls every 30 s, keeps the last good metrics, and maps
+  Beszel's `up`/`down` status to the tab.
+- `ServerPane` now renders an online dashboard: server name, CPU %, RAM % and
+  used/total, disk % and used/total, uptime, OS, last update, refresh button.
+  The unconfigured state is a setup prompt.
+- Settings → Server (Beszel): hub URL, read-only email/password, optional
+  Cloudflare Access Client ID/Secret, Save & Test, Refresh.
+- Added `--beszel-test` with `BESZEL_URL`, `BESZEL_EMAIL`, `BESZEL_PASSWORD`,
+  `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`.
+- Added `NSAllowsLocalNetworking` to Info.plist for the SSH tunnel / LAN test.
+- Domain path: add `beszel.dhanush-vijay.uk` → `http://172.17.0.1:8090` in the
+  Cloudflare Tunnel, create a read-only Beszel user, optionally add Cloudflare
+  Access + a service token, then fill in Settings → Server.
+- Version 0.5.0.
+
+Verified: unconfigured error path and a live auth-failure response through the
+SSH tunnel (`Beszel login failed. Failed to authenticate.`). The success path
+needs the read-only Beszel user.

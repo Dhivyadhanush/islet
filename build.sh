@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 APP="build/lost_Island.app"
 EXEC="lost_Island"
-VERSION="${VERSION:-0.4.0}"
+VERSION="${VERSION:-0.5.0}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"
@@ -85,6 +85,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key><true/>
+  </dict>
   <key>NSCalendarsFullAccessUsageDescription</key><string>lost_Island shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
   <key>NSCalendarsUsageDescription</key><string>lost_Island shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
   <key>NSAppleEventsUsageDescription</key><string>lost_Island reads the current track from Music or Spotify only when the system now-playing information is unavailable. Nothing else is read or sent.</string>

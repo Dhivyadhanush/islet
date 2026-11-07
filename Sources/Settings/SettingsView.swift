@@ -20,6 +20,11 @@ struct SettingsView: View {
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var loginError: String?
+    @State private var serverURL = ""
+    @State private var serverEmail = ""
+    @State private var serverPassword = ""
+    @State private var serverAccessID = ""
+    @State private var serverAccessSecret = ""
 
     var body: some View {
         Form {
@@ -115,14 +120,34 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Server") {
+            Section("Server (Beszel)") {
+                TextField("Hub URL", text: $serverURL)
+                    .textContentType(.URL)
+                TextField("Read-only email", text: $serverEmail)
+                    .textContentType(.username)
+                SecureField("Password (leave blank to keep)", text: $serverPassword)
+                TextField("Cloudflare Access Client ID (optional)", text: $serverAccessID)
+                SecureField("Access Client Secret (optional)", text: $serverAccessSecret)
+
                 HStack {
-                    Label("Status", systemImage: "server.rack")
+                    Button("Save & Test") {
+                        saveServer()
+                    }
+                    Button("Refresh") {
+                        server.refresh()
+                    }
                     Spacer()
                     Text(serverStatus)
                         .foregroundStyle(.secondary)
                 }
-                Text("This tab is a placeholder. Tell lost_Island how to reach your server (URL, command or API) and it will show uptime, latency and services here.")
+
+                if let error = server.lastError, !error.isEmpty {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+
+                Text("Create a read-only user in Beszel → Settings → Users. If Cloudflare Access protects the hub, create a service token and paste its Client ID and Secret here. The password and secret are stored in Keychain.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -182,6 +207,24 @@ struct SettingsView: View {
                 launchAtLogin = LaunchAtLogin.isEnabled
             }
         }
+        .onAppear {
+            let config = server.publicConfig
+            serverURL = config.baseURL
+            serverEmail = config.email
+            serverAccessID = config.accessClientID
+        }
+    }
+
+    private func saveServer() {
+        server.save(
+            baseURL: serverURL,
+            email: serverEmail,
+            password: serverPassword,
+            accessClientID: serverAccessID,
+            accessClientSecret: serverAccessSecret
+        )
+        serverPassword = ""
+        serverAccessSecret = ""
     }
 
     private func moduleRow(
@@ -218,9 +261,10 @@ struct SettingsView: View {
     private var serverStatus: String {
         switch server.status {
         case .notConfigured: return "Not configured"
-        case .checking: return "Checking"
-        case .online(_): return "Online"
+        case .checking: return "Checking…"
+        case .online: return "Online"
         case .offline: return "Offline"
+        case .error: return "Error"
         }
     }
 
@@ -235,7 +279,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.0"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.5.0"
         return "v\(short)"
     }
 

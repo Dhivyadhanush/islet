@@ -9,6 +9,7 @@ Notes for anyone (human or agent) changing lost_Island.
 ARCHS="arm64 x86_64" ./build.sh             # universal
 ./build/lost_Island.app/Contents/MacOS/lost_Island --diagnose
 ./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
+./build/lost_Island.app/Contents/MacOS/lost_Island --beszel-test
 ```
 
 - `--diagnose` starts the services, waits 3 s, prints network/screen time/
@@ -33,7 +34,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/Island/IslandShape.swift` | Animatable top/bottom corner radii |
 | `Sources/Island/ExpandedView.swift` | Tabs, battery, pin, gear |
 | `Sources/Island/Panes/*` | Music, network, screen time, controls, calendar, server |
-| `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, server |
+| `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, Beszel |
 | `Sources/Media/IsletMedia.m` | Objective-C dylib loaded by perl |
 | `Sources/Media/islet-media.pl` | Loader/stream entry point |
 | `Sources/Settings/*` | Settings window |
@@ -76,9 +77,13 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    `ScreenTimeService` samples `NSWorkspace.frontmostApplication` every 5 s,
    excludes idle/sleep and system UI, and persists today's totals in
    UserDefaults. Do not present it as Apple's Screen Time number.
-10. **Server is a placeholder.** `ServerStatusService.check()` is the single
-    integration point. Keep the `Status` cases and `ServerPane` layout; replace
-    the body with the agreed endpoint/command when the user specifies it.
+10. **Server is Beszel-backed.** `BeszelClient` authenticates to PocketBase
+    (`POST /api/collections/users/auth-with-password`) and reads `systems` plus
+    `system_stats`. The hub URL/email/Access client ID live in UserDefaults; the
+    password and Access secret live in Keychain. Cloudflare Access service-token
+    headers are supported. `--beszel-test` reads `BESZEL_URL`, `BESZEL_EMAIL`,
+    `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`. The
+    `NSAllowsLocalNetworking` ATS key permits local/tunnel HTTP for testing.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 
@@ -86,7 +91,8 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 
 1. Bump `VERSION` in `build.sh` (and the Settings fallback version if needed).
 2. `ARCHS="arm64 x86_64" ./build.sh`
-3. `./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots` and update
+3. `./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
+./build/lost_Island.app/Contents/MacOS/lost_Island --beszel-test` and update
    `docs/preview-*.png`.
 4. Build the DMG:
    `hdiutil create -volname "lost_Island" -srcfolder build/dmg -ov -format UDZO build/lost_Island-$VERSION.dmg`

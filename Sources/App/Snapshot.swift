@@ -28,6 +28,7 @@ enum Snapshot {
         battery.previewSeed(percentage: 82, charging: true)
         controls.previewSeed(volume: 0.62, brightness: 0.78)
         calendar.previewSeed(status: .fullAccess, events: sampleEvents())
+        server.previewSeed(metrics: sampleServerMetrics())
         let history = sampleHistory()
         network.previewSeed(
             down: history.last?.down ?? 0,
@@ -131,6 +132,27 @@ enum Snapshot {
                 up: values[index].1
             )
         }
+    }
+
+    private static func sampleServerMetrics() -> BeszelMetrics {
+        BeszelMetrics(
+            name: "server",
+            hostname: "server",
+            status: "up",
+            cpuPercent: 4,
+            memoryPercent: 27,
+            memoryUsedBytes: 1_932_735_283,
+            memoryTotalBytes: 7_194_048_563,
+            diskPercent: 23,
+            diskUsedGB: 21,
+            diskTotalGB: 98,
+            uptimeSeconds: 8 * 86_400 + 11 * 3_600,
+            cores: 4,
+            threads: 4,
+            model: "AMD PRO A4-3350B APU",
+            os: "Ubuntu 24.04.5 LTS",
+            updatedAt: Date()
+        )
     }
 
     private static func sampleApps() -> [ScreenTimeService.AppUsage] {

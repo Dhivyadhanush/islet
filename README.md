@@ -28,8 +28,8 @@ disappears into the notch; hover the notch to open it.
   DisplayServices. Mute with one click.
 - **Calendar.** Today's events, an ongoing-event highlight, and a **Join**
   button when an event contains a meeting link.
-- **Server.** A placeholder tab ready for the uptime/latency integration; the
-  status enum and pane are already in place.
+- **Server status with Beszel.** CPU, RAM, disk, uptime and online/offline,
+  read from your Beszel hub with a read-only user.
 - **Battery.** A tiny battery/charging readout in the expanded header.
 - **Configurable.** Enable or disable any module, pin it open, or let it expand
   on hover.
@@ -46,7 +46,7 @@ disappears into the notch; hover the notch to open it.
   <img src="docs/preview-calendar.png" width="340" alt="Calendar">
 </p>
 <p align="center">
-  <img src="docs/preview-server.png" width="340" alt="Server placeholder">
+  <img src="docs/preview-server.png" width="340" alt="Server status with Beszel">
 </p>
 
 ## Install with Homebrew
@@ -84,6 +84,49 @@ dictionary and streams it to the app. That is why browser playback now shows up.
 - If you ever see **Media → Fallback** in Settings, lost_Island could not start the
   helper and is using the older in-process API.
 
+## Server status with Beszel
+
+The Server tab talks to your **Beszel** hub. It does not shell out or run a
+generic ping.
+
+1. **Expose Beszel on your domain.** Cloudflare Zero Trust → Networks →
+   Tunnels → the tunnel that serves `dhanush-vijay.uk` → Public Hostname:
+   `beszel` / `dhanush-vijay.uk`, service `HTTP` → `172.17.0.1:8090`.
+2. **Create a read-only Beszel user** in Beszel → Settings → Users (role
+   `readonly`).
+3. **Optional Access.** Add a self-hosted Cloudflare Access application for
+   `beszel.dhanush-vijay.uk` with your email/OTP policy. For the island, create
+   an Access **service token** and add a Service Auth policy.
+4. **Configure the island.** Settings → Server (Beszel): hub URL
+   `https://beszel.dhanush-vijay.uk`, read-only email/password, and the Access
+   Client ID/Secret if Access is on. Save & Test.
+5. The tab shows online/offline, CPU, RAM (used/total), disk (used/total) and
+   uptime. It refreshes every 30 s.
+
+For a local test before the domain is ready:
+
+```bash
+ssh -N -L 8090:127.0.0.1:8090 -J pi@100.117.187.32 server1@192.168.1.22
+```
+
+Then use `http://127.0.0.1:8090` in Settings. The CLI can verify credentials:
+
+```bash
+BESZEL_URL=https://beszel.dhanush-vijay.uk \
+BESZEL_EMAIL=you@example.com \
+BESZEL_PASSWORD='…' \
+./build/lost_Island.app/Contents/MacOS/lost_Island --beszel-test
+```
+
+If Cloudflare Access is on, add `CF_ACCESS_CLIENT_ID` and
+`CF_ACCESS_CLIENT_SECRET` to that command.
+
+API used: `POST /api/collections/users/auth-with-password`,
+`GET /api/collections/systems/records`,
+`GET /api/collections/system_stats/records`. The password and Access secret are
+stored in Keychain; the hub URL, email and Access client ID live in
+UserDefaults.
+
 ## Build from source
 
 Requirements: macOS 14+, Xcode or Command Line Tools, and a Mac with a notch
@@ -107,6 +150,7 @@ Useful diagnostics:
 ```bash
 ./build/lost_Island.app/Contents/MacOS/lost_Island --diagnose
 ./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
+./build/lost_Island.app/Contents/MacOS/lost_Island --beszel-test
 ```
 
 `--snapshot` renders the island offscreen to PNGs, which is how the images above
@@ -119,6 +163,7 @@ were produced.
 | Music / browser media | None (system now-playing service) |
 | Network | None (kernel interface counters) |
 | Screen Time | None (local frontmost-app tracker) |
+| Server status | Beszel read-only login (+ optional Cloudflare Access service token) |
 | Volume | None (CoreAudio) |
 | Brightness | None (DisplayServices, built-in display) |
 | Calendar | Calendar access, requested when you tap **Connect** |
@@ -135,7 +180,7 @@ Open **Settings** from the menu bar or the gear in the island.
 - Motion: Calm animations.
 - Network: today's total, live rate and a reset button.
 - Screen Time: today's total and a reset button.
-- Server: integration status (placeholder for now).
+- Server: Beszel hub URL, read-only email/password, optional Cloudflare Access service token.
 - Media: helper status.
 - Permissions: calendar status and a shortcut to System Settings.
 
@@ -145,8 +190,9 @@ Open **Settings** from the menu bar or the gear in the island.
   totals to third-party apps without Full Disk Access or a DeviceActivity report
   extension. lost_Island tracks the frontmost app while it runs and excludes idle and
   sleep time; it does not include usage before lost_Island launched.
-- **Server status is a placeholder.** The pane and status enum are ready; the
-  actual endpoint/command integration is the next step.
+- **Server status needs Beszel.** Configure a read-only Beszel user; until then
+  the Server tab shows a setup prompt. If Cloudflare Access is enabled, the app
+  also needs an Access service token.
 - Brightness applies to the built-in display. External displays are left alone.
 - The app is ad-hoc signed. A Developer ID build would remove the Gatekeeper
   warning; the source is here if you want to sign it yourself.
@@ -163,10 +209,10 @@ SwiftUI island (NSPanel, .statusBar, non-activating)
 │   ├── ScreenTimePane local frontmost-app tracker + app breakdown
 │   ├── ControlsPane   CoreAudio volume + DisplayServices brightness
 │   ├── CalendarPane   EventKit + meeting-link Join
-│   └── ServerPane     placeholder for the server integration
+│   └── ServerPane     Beszel status + CPU/RAM/disk/uptime
 └── Services           NowPlaying, NetworkMonitor, ScreenTimeService,
                        SystemControls, CalendarService, BatteryMonitor,
-                       ServerStatusService, MediaBridge
+                       ServerStatusService, BeszelClient, Keychain, MediaBridge
 ```
 
 The collapsed window is exactly the notch plus a 10 pt transparent hover margin.

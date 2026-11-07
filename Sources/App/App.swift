@@ -54,6 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controls.start()
         calendar.start()
         battery.start()
+        server.start()
         setupStatusItem()
 
         if isDiagnose {
@@ -88,6 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         screenTime.flush()
         network.flush()
         nowPlaying.stop()
+        server.stop()
     }
 
     // MARK: - Status item
@@ -166,6 +168,32 @@ struct IsletMain {
         }
 
         Defaults.register()
+
+        if CommandLine.arguments.contains("--beszel-test") {
+            let env = ProcessInfo.processInfo.environment
+            let config = BeszelConfig(
+                baseURL: env["BESZEL_URL"] ?? "",
+                email: env["BESZEL_EMAIL"] ?? "",
+                password: env["BESZEL_PASSWORD"] ?? "",
+                accessClientID: env["CF_ACCESS_CLIENT_ID"] ?? "",
+                accessClientSecret: env["CF_ACCESS_CLIENT_SECRET"] ?? ""
+            )
+            Task {
+                do {
+                    let metrics = try await BeszelClient().fetch(config: config)
+                    print("server   \(metrics.name) [\(metrics.status)]")
+                    print("cpu      \(Int(metrics.cpuPercent))%")
+                    print("ram      \(Int(metrics.memoryPercent))%")
+                    print("disk     \(Int(metrics.diskPercent))%")
+                    print("uptime   \(Int(metrics.uptimeSeconds))s")
+                    exit(0)
+                } catch {
+                    print("error: \(error.localizedDescription)")
+                    exit(1)
+                }
+            }
+            RunLoop.main.run()
+        }
 
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot") {
             let directory = CommandLine.arguments.count > index + 1
