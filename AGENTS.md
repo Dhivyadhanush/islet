@@ -91,9 +91,8 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 
 1. Bump `VERSION` in `build.sh` (and the Settings fallback version if needed).
 2. `ARCHS="arm64 x86_64" ./build.sh`
-3. `./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
-./build/lost_Island.app/Contents/MacOS/lost_Island --beszel-test` and update
-   `docs/preview-*.png`.
+3. `./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots`
+   and update `docs/preview-*.png`.
 4. Build the DMG:
    `hdiutil create -volname "lost_Island" -srcfolder build/dmg -ov -format UDZO build/lost_Island-$VERSION.dmg`
 5. `gh release create v$VERSION build/lost_Island-$VERSION.dmg`
