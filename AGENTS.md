@@ -111,16 +111,20 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     cover, weights saturated pixels, then clamps saturation/brightness so the
     hue stays legible on black. It caches by `ObjectIdentifier(NSImage)`, and
     `MusicPane` falls back to white when there is no artwork. The pane's
-    `PlayingWaveform` is a `TimelineView` + `Canvas` sine wave; `active` freezes
-    it when paused. Do not sample artwork on every frame without that cache.
-13. **Playing menu-bar item.** `AppDelegate` observes `NowPlaying.$track` and
-    creates an `NSStatusItem` only while `track.isPlaying`; pausing or stopping
-    removes it. Its image is a mini cover thumbnail plus a flowing waveform,
-    drawn into six `NSImage` frames (`makePlayingFrames(artwork:)`), rebuilt when
-    `track.artwork` changes and cycled by `playingTimer`. The wave uses
-    `NSColor.labelColor` so it adapts to a light or dark menu bar. macOS puts
-    third-party extras on the right side of the notch, so "before the notch" is
-    not addressable through `NSStatusBar`.
+    `PlayingWaveform` is a `TimelineView` + `Canvas` row of rounded bars (bar
+    width 2, gap 1.8, heights driven by per-bar sine phases and an envelope);
+    `active` freezes it when paused. Do not sample artwork on every frame
+    without that cache.
+13. **Now-playing chip left of the notch.** `NSStatusBar` only accepts items to
+    the right of the notch, so `NowPlayingChipController` uses a second
+    borderless `IslandPanel` at `.statusBar` level, positioned at
+    `notchLeft - 52 - 6` and vertically centred in the menu bar. It hosts a
+    white `PlayingWaveform` inside a black capsule (no artwork) and is shown
+    only when `track.isPlaying`,
+    the island is visible and `state.expanded` is false; `AppDelegate` refreshes
+    it from `NowPlaying.$track` and `IslandState.$expanded`. Clicking it selects
+    the Music tab and calls `state.onExpandNow`. Do not add a status item for
+    this; it cannot sit left of the notch.
 14. **Settings are explicit-save.** `SettingsView` edits a `SettingsDraft` in
     `@State`; only the Save button (⌘S) writes `UserDefaults`. The island and
     panes use `@AppStorage`, so they update when Save lands. Revert reloads the

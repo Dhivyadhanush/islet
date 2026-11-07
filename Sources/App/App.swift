@@ -16,12 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: IslandController!
     private var settingsController: SettingsWindowController!
     private var statusItem: NSStatusItem?
-    private var playingItem: NSStatusItem?
+    private var chipController: NowPlayingChipController!
     private var nowPlayingObserver: AnyCancellable?
-    private var playingTimer: Timer?
-    private var playingFrameIndex = 0
-    private var playingFrameImages: [NSImage] = []
-    private var playingArtwork: NSImage?
+    private var expandedObserver: AnyCancellable?
     private var showItem: NSMenuItem?
     private var loginItem: NSMenuItem?
 
@@ -50,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             server: server
         )
         state.openSettings = { [weak self] in self?.openSettings() }
+        chipController = NowPlayingChipController(state: state, nowPlaying: nowPlaying)
 
         if !isDiagnose {
             controller.show()
@@ -98,163 +96,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         network.flush()
         nowPlaying.stop()
         server.stop()
-        if let playingItem {
-            NSStatusBar.system.removeStatusItem(playingItem)
-        }
     }
 
-    // MARK: - Now-playing menu bar item
+    // MARK: - Now-playing chip
 
-    /// A small waveform item that exists only while music is actually playing.
-    /// It disappears the moment playback stops.
+    /// The mini cover + waveform chip that sits left of the notch. It exists
+    /// only while audio plays and the island is collapsed.
     private func observeNowPlaying() {
         guard !isDiagnose else { return }
         nowPlayingObserver = nowPlaying.$track
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] track in
-                self?.updatePlayingItem(track)
+            .sink { [weak self] _ in
+                self?.refreshChip()
+            }
+        expandedObserver = state.$expanded
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshChip()
             }
     }
 
-    private func updatePlayingItem(_ track: NowPlaying.Track?) {
-        guard track?.isPlaying == true else {
-            stopPlayingAnimation()
-            if let playingItem {
-                NSStatusBar.system.removeStatusItem(playingItem)
-                self.playingItem = nil
-            }
-            playingArtwork = nil
-            playingFrameImages = []
-            return
-        }
-
-        if playingItem == nil {
-            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-            if let button = item.button {
-                button.target = self
-                button.action = #selector(openMusicFromMenuBar)
-                button.sendAction(on: [.leftMouseUp])
-                button.toolTip = "Now playing"
-            }
-            playingItem = item
-        }
-
-        // Rebuild the thumbnail + waveform frames when the cover changes.
-        if playingFrameImages.isEmpty || playingArtwork !== track?.artwork {
-            playingArtwork = track?.artwork
-            playingFrameImages = makePlayingFrames(artwork: track?.artwork)
-            playingFrameIndex = 0
-            playingItem?.button?.image = playingFrameImages.first
-            startPlayingAnimation()
-        }
-
-        guard let track else { return }
-        let title = track.title.isEmpty ? "Now playing" : track.title
-        let artist = track.artist
-        playingItem?.button?.toolTip = artist.isEmpty ? title : "\(title) — \(artist)"
-    }
-
-    /// Frames for the menu-bar item: a mini album-art thumbnail followed by a
-    /// flowing sound wave. The wave phase shifts per frame, so cycling them
-    /// looks like live audio.
-    private func makePlayingFrames(artwork: NSImage?) -> [NSImage] {
-        let size = NSSize(width: 34, height: 18)
-        let artSide: CGFloat = 18
-        let artRect = NSRect(x: 0, y: 0, width: artSide, height: artSide)
-        let waveRect = NSRect(x: artSide + 4, y: 2.5, width: 12, height: 13)
-        let phases: [CGFloat] = [0, 0.7, 1.4, 2.1, 2.8, 3.5]
-
-        return phases.map { phase in
-            let image = NSImage(size: size, flipped: false) { _ in
-                let clip = NSBezierPath(
-                    roundedRect: artRect,
-                    xRadius: 4,
-                    yRadius: 4
-                )
-
-                if let artwork {
-                    let source = artwork.size
-                    let scale = max(artSide / max(source.width, 1), artSide / max(source.height, 1))
-                    let drawn = NSSize(width: source.width * scale, height: source.height * scale)
-                    let drawRect = NSRect(
-                        x: (artSide - drawn.width) / 2,
-                        y: (artSide - drawn.height) / 2,
-                        width: drawn.width,
-                        height: drawn.height
-                    )
-                    NSGraphicsContext.saveGraphicsState()
-                    clip.addClip()
-                    artwork.draw(
-                        in: drawRect,
-                        from: .zero,
-                        operation: .sourceOver,
-                        fraction: 1
-                    )
-                    NSGraphicsContext.restoreGraphicsState()
-                } else {
-                    NSColor.tertiaryLabelColor.setFill()
-                    clip.fill()
-                }
-
-                NSColor.labelColor.withAlphaComponent(0.35).setStroke()
-                clip.lineWidth = 0.5
-                clip.stroke()
-
-                let path = NSBezierPath()
-                path.lineWidth = 1.4
-                path.lineCapStyle = .round
-                path.lineJoinStyle = .round
-                let steps = 18
-                for index in 0...steps {
-                    let p = CGFloat(index) / CGFloat(steps)
-                    let x = waveRect.minX + waveRect.width * p
-                    let envelope = sin(.pi * p)
-                    let y = waveRect.midY
-                        + sin(p * .pi * 2 * 1.8 + phase) * (waveRect.height / 2) * envelope
-                    if index == 0 {
-                        path.move(to: NSPoint(x: x, y: y))
-                    } else {
-                        path.line(to: NSPoint(x: x, y: y))
-                    }
-                }
-                NSColor.labelColor.setStroke()
-                path.stroke()
-
-                return true
-            }
-            image.isTemplate = false
-            return image
-        }
-    }
-
-    private func startPlayingAnimation() {
-        playingTimer?.invalidate()
-        guard !playingFrameImages.isEmpty else { return }
-        let timer = Timer(
-            timeInterval: 0.18,
-            target: self,
-            selector: #selector(advancePlayingFrame),
-            userInfo: nil,
-            repeats: true
+    private func refreshChip() {
+        chipController?.update(
+            track: nowPlaying.track,
+            islandVisible: controller.isVisible
         )
-        RunLoop.main.add(timer, forMode: .common)
-        playingTimer = timer
-    }
-
-    @objc private func advancePlayingFrame() {
-        guard let button = playingItem?.button, !playingFrameImages.isEmpty else { return }
-        playingFrameIndex = (playingFrameIndex + 1) % playingFrameImages.count
-        button.image = playingFrameImages[playingFrameIndex]
-    }
-
-    private func stopPlayingAnimation() {
-        playingTimer?.invalidate()
-        playingTimer = nil
-    }
-
-    @objc private func openMusicFromMenuBar() {
-        state.tab = .music
-        controller.show()
     }
 
     // MARK: - Status item
@@ -302,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller.show()
         }
         showItem?.state = controller.isVisible ? .on : .off
+        refreshChip()
     }
 
     @objc func openSettings() {

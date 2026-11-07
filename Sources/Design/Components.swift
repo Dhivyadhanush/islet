@@ -51,39 +51,44 @@ struct MiniSlider: View {
     }
 }
 
-/// A flowing sound wave. Used in the music pane while a track is playing;
-/// `active` freezes it into a flat line when paused.
+/// A bar-style audio waveform like a real player visualizer. `active` freezes
+/// it into a low row when paused.
 struct PlayingWaveform: View {
     var active: Bool = true
     var color: Color = .white
+    var barWidth: CGFloat = 2
+    var gap: CGFloat = 1.8
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 0.06, paused: !active)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             Canvas { ctx, size in
-                let mid = size.height / 2
-                let amplitude = size.height * (active ? 0.38 : 0.10)
-                let steps = 48
+                let count = max(3, Int((size.width + gap) / (barWidth + gap)))
+                let totalWidth = CGFloat(count) * barWidth + CGFloat(count - 1) * gap
+                let startX = (size.width - totalWidth) / 2
 
-                var path = Path()
-                for index in 0...steps {
-                    let p = Double(index) / Double(steps)
-                    let x = size.width * p
-                    // Taper the ends so the wave reads as a single sound pulse.
-                    let envelope = sin(.pi * p)
-                    let y = mid + sin(p * .pi * 2 * 2.2 + t * 5.2) * amplitude * envelope
-                    if index == 0 {
-                        path.move(to: CGPoint(x: x, y: y))
-                    } else {
-                        path.addLine(to: CGPoint(x: x, y: y))
-                    }
+                for index in 0..<count {
+                    let p = Double(index) / Double(max(count - 1, 1))
+                    let phase = Double(index) * 0.85
+                    let speed = 2.2 + Double(index % 4) * 0.45
+                    let wave = 0.5 + 0.5 * sin(t * speed + phase)
+                    let envelope = 0.55 + 0.45 * sin(p * .pi * 2.4 + t * 0.9)
+                    let floor: Double = active ? 0.16 : 0.10
+                    let fraction = active
+                        ? floor + (1 - floor) * wave * envelope
+                        : floor
+                    let height = max(barWidth, size.height * fraction)
+                    let rect = CGRect(
+                        x: startX + CGFloat(index) * (barWidth + gap),
+                        y: (size.height - height) / 2,
+                        width: barWidth,
+                        height: height
+                    )
+                    ctx.fill(
+                        Path(roundedRect: rect, cornerRadius: barWidth / 2),
+                        with: .color(color.opacity(active ? 0.95 : 0.38))
+                    )
                 }
-
-                ctx.stroke(
-                    path,
-                    with: .color(color.opacity(active ? 1 : 0.42)),
-                    style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
-                )
             }
         }
     }

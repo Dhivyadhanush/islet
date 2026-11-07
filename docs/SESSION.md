@@ -350,3 +350,32 @@ with a mini album-art thumbnail.
   accent colour; it flattens when paused.
 - Replaced the temporary `EqualizerBars` with `PlayingWaveform`.
 - Version 0.8.1.
+
+## Phase 14 — now-playing chip left of the notch (8 Nov 2026)
+
+Request: move the mini cover + waveform beside the menu bar, immediately left of
+the notch.
+
+- `NSStatusBar` cannot place third-party items left of the notch, so the item is
+  now an island-owned borderless panel (`NowPlayingChipController`) at
+  `.statusBar` level, 74×24 pt, positioned 6 pt left of the notch and vertically
+  centred in the menu bar.
+- It shows the mini cover + `PlayingWaveform`, opens the Music tab on click, and
+  is hidden while paused, when the island expands, or when the island is hidden.
+- Removed the previous right-side `NSStatusItem` and its six-frame image timer.
+- Verified the panel frame at x=671, y=7 on the test display (island panel starts
+  at 741 + 10 pt padding, so the chip sits 6 pt left of the notch) and confirmed
+  it is offscreen while the track is paused.
+- Version 0.8.2.
+
+## Phase 15 — template-style bar waveform, no thumbnail (8 Nov 2026)
+
+Request: use the waveform from `temblate.mp4` and drop the album thumbnail.
+
+- `PlayingWaveform` is now a row of rounded bars (like the reference clip)
+  instead of a sine line: 2 pt bars, 1.8 pt gaps, per-bar sine phases plus an
+  envelope so the middle swells and the ends taper. `active` freezes it low.
+- The menu-bar chip no longer shows the cover; it is a 52×24 black capsule with
+  the white waveform only, still 6 pt left of the notch.
+- The Music pane uses the same bar waveform in the artwork accent colour.
+- Version 0.8.3.

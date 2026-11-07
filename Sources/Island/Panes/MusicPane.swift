@@ -46,7 +46,7 @@ struct MusicPane: View {
                     Spacer(minLength: 0)
 
                     PlayingWaveform(active: track.isPlaying, color: accent)
-                        .frame(width: 64, height: 26)
+                        .frame(width: 78, height: 26)
                         .padding(.trailing, 4)
                         .help(track.isPlaying ? "Playing" : "Paused")
                 }

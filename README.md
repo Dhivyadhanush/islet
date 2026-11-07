@@ -20,10 +20,11 @@ disappears into the notch; hover the notch to open it.
   artwork, title, artist, source app, scrubbable progress and transport
   controls. The progress bar, play button and artwork glow take their colour
   from the current cover, and a flowing sound wave shows the track is live.
-- **Playing indicator in the menu bar.** While audio is playing, a mini
-  album-art thumbnail with an animated sound wave appears next to the other
-  menu-bar extras and opens the Music tab; it disappears as soon as playback
-  stops.
+- **Now-playing chip beside the notch.** While audio is playing, a small black
+  chip with a live bar waveform sits in the menu bar immediately left of the
+  notch. Click it to open the Music tab; it disappears when playback stops or
+  the island expands. macOS does not allow third-party status items left of the
+  notch, so the chip is drawn by the island at status-bar level.
 - **Network data on hover.** Today's download/upload total, a live rate and a
   seven-day chart — in the expanded card only, so the collapsed notch stays
   clean.
@@ -97,8 +98,8 @@ open /Applications/lost_Island.app
    **Save** (⌘S) to apply them, or **Revert** to discard. Nothing changes in the
    island until you save.
 8. **Menu bar item:** show/hide, settings, launch at login, quit. While music
-   plays, a second item showing the cover thumbnail plus a live waveform
-   appears and opens the Music tab on click.
+   plays, a small waveform chip appears just left of the notch; click it to
+   open the Music tab.
 
 Click anywhere outside the island to close it.
 
