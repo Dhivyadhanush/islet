@@ -268,3 +268,18 @@ fill the width.
   0600 permissions. URL/email/Access client ID remain in UserDefaults.
 - `--beszel-save` writes the file headlessly; the app reads it on launch.
 - Version 0.7.4.
+
+## Phase 9 — percentage bars + vertical fill (7 Nov 2026)
+
+Request: bars under CPU/RAM/Disk showing the percentage, and metric alignment
+on both axes when metrics are added or removed.
+
+- `ServerPane.metricsRow` is a weighted `GeometryReader` grid: CPU/RAM/Disk 1.0,
+  NET 1.7. Adding/removing a metric recalculates cell widths, so the row fills
+  edge-to-edge on the horizontal axis.
+- Each system row uses `.frame(maxHeight: .infinity)`, so Server1 and Raspberry
+  Pi split the pane height evenly; the footer stays at the bottom.
+- CPU, RAM and Disk draw a 2.5 pt capsule bar under the value (filled fraction
+  is the percentage); NET renders an empty 2.5 pt spacer so label baselines and
+  row heights line up across all columns.
+- Version 0.7.5.

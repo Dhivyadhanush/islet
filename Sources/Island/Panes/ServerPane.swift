@@ -50,13 +50,12 @@ struct ServerPane: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(server.systems.enumerated()), id: \.element.id) { index, system in
                 systemRow(system)
+                    .frame(maxHeight: .infinity)
                 if index < server.systems.count - 1 {
                     IslandDivider()
-                        .padding(.vertical, 3)
+                        .padding(.vertical, 2)
                 }
             }
-
-            Spacer(minLength: 0)
 
             HStack(spacing: 4) {
                 if let error = server.lastError, !error.isEmpty {
@@ -72,12 +71,15 @@ struct ServerPane: View {
             }
             .font(.system(size: 8))
             .foregroundStyle(Theme.tertiary)
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func systemRow(_ system: BeszelMetrics) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        let items = metricItems(system)
+
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Circle()
                     .fill(system.isOnline ? Color.white : Theme.tertiary)
@@ -93,49 +95,81 @@ struct ServerPane: View {
                     .lineLimit(1)
             }
 
-            let items = metricItems(system)
             if !items.isEmpty {
-                HStack(spacing: 0) {
-                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                        metric(item.0, item.1)
-                        if index < items.count - 1 {
-                            Spacer(minLength: 10)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                metricsRow(items)
             }
         }
-        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
-    private func metricItems(_ system: BeszelMetrics) -> [(String, String)] {
-        var items: [(String, String)] = []
+    private func metricsRow(
+        _ items: [(label: String, value: String, weight: CGFloat, fraction: CGFloat?)]
+    ) -> some View {
+        let total = max(items.reduce(0) { $0 + $1.weight }, 1)
+
+        return GeometryReader { geo in
+            HStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                    metric(item.label, item.value, fraction: item.fraction)
+                        .frame(
+                            width: geo.size.width * item.weight / total,
+                            alignment: .leading
+                        )
+                }
+            }
+        }
+        .frame(height: 22)
+    }
+
+    private func metricItems(
+        _ system: BeszelMetrics
+    ) -> [(label: String, value: String, weight: CGFloat, fraction: CGFloat?)] {
+        var items: [(label: String, value: String, weight: CGFloat, fraction: CGFloat?)] = []
         if showCPU {
-            items.append(("CPU", "\(Int(system.cpuPercent.rounded()))%"))
+            items.append(("CPU", "\(Int(system.cpuPercent.rounded()))%", 1.0, system.cpuPercent / 100))
         }
         if showRAM {
-            items.append(("RAM", "\(Int(system.memoryPercent.rounded()))%"))
+            items.append(("RAM", "\(Int(system.memoryPercent.rounded()))%", 1.0, system.memoryPercent / 100))
         }
         if showDisk {
-            items.append(("DISK", "\(Int(system.diskPercent.rounded()))%"))
+            items.append(("DISK", "\(Int(system.diskPercent.rounded()))%", 1.0, system.diskPercent / 100))
         }
         if showNetwork {
-            items.append(("NET", networkText(system)))
+            items.append(("NET", networkText(system), 1.7, nil))
         }
         return items
     }
 
-    private func metric(_ label: String, _ value: String) -> some View {
-        HStack(spacing: 2) {
-            Text(label)
-                .font(.system(size: 7.5, weight: .semibold))
-                .tracking(0.7)
-                .foregroundStyle(Theme.tertiary)
-            Text(value)
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(Theme.text.opacity(0.9))
-                .lineLimit(1)
+    private func metric(_ label: String, _ value: String, fraction: CGFloat?) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 2) {
+                Text(label)
+                    .font(.system(size: 7.5, weight: .semibold))
+                    .tracking(0.7)
+                    .foregroundStyle(Theme.tertiary)
+                Text(value)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Theme.text.opacity(0.9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+
+            if let fraction {
+                GeometryReader { geo in
+                    let clamped = min(max(fraction, 0), 1)
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(height: 2.5)
+                        Capsule()
+                            .fill(Color.white.opacity(0.85))
+                            .frame(width: max(2, geo.size.width * clamped), height: 2.5)
+                    }
+                }
+                .frame(height: 2.5)
+            } else {
+                Color.clear.frame(height: 2.5)
+            }
         }
     }
 
