@@ -5,10 +5,11 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let state = IslandState()
     private let nowPlaying = NowPlaying()
-    private let network = NetworkMonitor()
+    private let screenTime = ScreenTimeService()
     private let controls = SystemControls()
     private let calendar = CalendarService()
     private let battery = BatteryMonitor()
+    private let server = ServerStatusService()
 
     private var controller: IslandController!
     private var settingsController: SettingsWindowController!
@@ -25,16 +26,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         settingsController = SettingsWindowController(
             calendar: calendar,
-            network: network,
+            screenTime: screenTime,
+            server: server,
             nowPlaying: nowPlaying
         )
         controller = IslandController(
             state: state,
             nowPlaying: nowPlaying,
-            network: network,
+            screenTime: screenTime,
             controls: controls,
             calendar: calendar,
-            battery: battery
+            battery: battery,
+            server: server
         )
         state.openSettings = { [weak self] in self?.openSettings() }
 
@@ -43,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         nowPlaying.start()
-        network.start()
+        screenTime.start()
         controls.start()
         calendar.start()
         battery.start()
@@ -52,7 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isDiagnose {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                 guard let self else { exit(1) }
-                print("network  \(ByteFormat.bytes(self.network.todayTotal)) today, \(ByteFormat.rate(self.network.rate))")
+                print("screentime \(ScreenTimeFormat.duration(self.screenTime.todaySeconds)) today (local)")
                 print("volume   \(Int((self.controls.volume * 100).rounded()))%\(self.controls.muted ? " muted" : "")")
                 print("display  \(Int((self.controls.brightness * 100).rounded()))%")
                 if let track = self.nowPlaying.track {
@@ -62,18 +65,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 print("media    \(self.nowPlaying.bridgeActive ? "helper" : (self.nowPlaying.usingFallback ? "fallback" : "starting"))")
                 print("battery  \(self.battery.percentage)%\(self.battery.charging ? " charging" : "")")
+                print("server   \(self.server.status)")
                 if self.calendar.status == .fullAccess {
                     print("calendar \(self.calendar.events.count) events today")
                 } else {
                     print("calendar access not granted")
                 }
+                self.screenTime.flush()
+                self.nowPlaying.stop()
                 exit(0)
             }
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        network.flush()
+        screenTime.flush()
         nowPlaying.stop()
     }
 

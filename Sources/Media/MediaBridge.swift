@@ -113,8 +113,8 @@ final class MediaBridge {
 
     func stop() {
         stopping = true
+        pipe?.fileHandleForReading.readabilityHandler = nil
         process?.terminationHandler = nil
-        process?.standardOutput = nil
         process?.terminate()
         process = nil
         pipe = nil

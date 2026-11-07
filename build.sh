@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 APP="build/Islet.app"
-VERSION="${VERSION:-0.2.0}"
+VERSION="${VERSION:-0.3.0}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"

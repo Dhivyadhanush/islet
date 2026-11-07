@@ -98,3 +98,46 @@ it. Screen Recording permission is not needed.
 - Per-module compact ordering instead of a single source picker.
 - Sign with a Developer ID and notarize for a warning-free install.
 - Persist network totals while the app is closed (boot-session counters).
+
+## Phase 2 — notch merge, Screen Time, Server placeholder (7 Nov 2026)
+
+Request: remove the network data readout that extended the notch; let the
+collapsed island merge with the notch; add Screen Time; add a Server tab that
+stays a TODO until the integration is specified.
+
+Changes:
+
+- Removed the Network module (`NetworkMonitor`, `NetworkPane`, the compact
+  readout, and the compact-source setting).
+- The collapsed island is now exactly the notch silhouette: square top, 12 pt
+  bottom radius, no text, no extra width. The panel is the notch plus a 10 pt
+  transparent hover margin, and the hover/tap handlers live on that padded
+  wrapper, so hovering the notch (or just below it) opens the card.
+- Added `ScreenTimeService`: samples the frontmost app every 5 s, excludes
+  idle/sleep and system UI, persists today's totals, and renders a total,
+  stacked app bar and top three apps. This is a local estimate — system Screen
+  Time needs Full Disk Access or a DeviceActivity report extension.
+- Added `ServerStatusService` + `ServerPane`: a polished placeholder with the
+  `Status` enum (`notConfigured`, `checking`, `online(latency)`, `offline`) and
+  a single `check()` integration point. The settings window has a Server
+  section explaining that the integration is pending.
+- Tabs are now Music, Screen Time, Controls, Calendar, Server.
+- The notch shape uses `IslandShape` with animatable corner radii, so the
+  collapse/expand morphs smoothly from the notch silhouette into the card.
+- Version 0.3.0; snapshots regenerated; docs and AGENTS updated.
+
+Current state:
+
+- App version 0.3.0, bundle id `dev.dhanuz.islet`.
+- Collapsed window on this Mac: 228×48 including the hover margin; island
+  208×37.5 (the notch).
+- Screen Time persists under `islet.screentime.v1`.
+- Server status is `notConfigured` until the user provides the integration.
+- Release 0.3.0 + cask update pending at the time this section was written.
+
+Next:
+
+- Wire the user's server details into `ServerStatusService.check()`.
+- Optionally read system Screen Time with Full Disk Access, or ship a
+  DeviceActivity report extension.
+- Add a per-app detail view and a seven-day Screen Time history.

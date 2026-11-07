@@ -11,8 +11,9 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 ./build/Islet.app/Contents/MacOS/Islet --snapshot build/snapshots
 ```
 
-- `--diagnose` starts the services, waits 3 s, prints network/volume/brightness/
-  media/battery/calendar state, then exits. Use it to verify the media helper.
+- `--diagnose` starts the services, waits 3 s, prints screen time/volume/
+  brightness/media/battery/server/calendar state, then exits. Use it to verify
+  the media helper.
 - `--snapshot` renders every island state offscreen with sample data. It needs no
   Screen Recording permission. The PNGs in `docs/` come from this.
 - Screen capture is often blocked by TCC; use snapshots instead of
@@ -28,11 +29,11 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/App/App.swift` | NSApplication entry, status item, lifecycle |
 | `Sources/App/Snapshot.swift` | `--snapshot` renderer with sample data |
 | `Sources/Island/IslandController.swift` | Panel geometry, hover, expand/collapse |
-| `Sources/Island/IslandRootView.swift` | Shape, clip, transitions, dark scheme |
-| `Sources/Island/CompactView.swift` | One-line collapsed content |
+| `Sources/Island/IslandRootView.swift` | Notch silhouette, clip, transitions, dark scheme |
+| `Sources/Island/IslandShape.swift` | Animatable top/bottom corner radii |
 | `Sources/Island/ExpandedView.swift` | Tabs, battery, pin, gear |
-| `Sources/Island/Panes/*` | Music, network, controls, calendar |
-| `Sources/Services/*` | Media, network, CoreAudio, EventKit, battery |
+| `Sources/Island/Panes/*` | Music, screen time, controls, calendar, server |
+| `Sources/Services/*` | Media, screen time, CoreAudio, EventKit, battery, server |
 | `Sources/Media/IsletMedia.m` | Objective-C dylib loaded by perl |
 | `Sources/Media/islet-media.pl` | Loader/stream entry point |
 | `Sources/Settings/*` | Settings window |
@@ -53,24 +54,32 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    from stdout. It restarts up to five times, then falls back to the legacy API.
    `NowPlaying.stop()` terminates it on quit. Artwork is sent only when the
    content identifier changes; the app caches it.
-4. **Window geometry.** The panel is the island size plus 10 pt on each side and
-   below. The top is flush with `screen.frame.maxY`. The margin exists so the
-   spring overshoot is not clipped. Do not add a visible border; the design is
-   intentionally borderless.
+4. **Window geometry.** The collapsed island is exactly the notch silhouette
+   (square top, 12 pt bottom radius) so it disappears into the cutout. The panel
+   is the island size plus 10 pt on each side and below; the hover/tap handlers
+   live on that padded wrapper, so hovering just under the notch works. The
+   expanded state keeps the top flush. The margin exists so the spring overshoot
+   is not clipped. Do not add a visible border; the design is intentionally
+   borderless.
 5. **No shadow.** `panel.hasShadow = false` keeps the resize animation cheap.
    The black shape is the whole visual.
 6. **Dark mode.** The island forces `.environment(\.colorScheme, .dark)`.
    Without it, default SwiftUI text renders black on black.
 7. **Notch detection.** `safeAreaInsets.top` + `auxiliaryTopLeftArea` /
-   `auxiliaryTopRightArea`; fall back to a 248×34 floating pill on non-notch
+   `auxiliaryTopRightArea`; fall back to a 150×30 floating pill on non-notch
    displays.
 8. **Commands need a live process.** `MRMediaRemoteSendCommand` returns true but
    is only delivered while the calling process stays alive. Islet is long-lived,
    so in-process commands work; a one-shot CLI must run a run loop for ~1 s.
-9. **Network counters are 32-bit.** Accumulate deltas and treat a decrease as an
-   interface reset. Only `en*` and `pdp_ip*` interfaces are counted so VPN
-   tunnels do not double-count.
-10. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
+9. **Screen Time is local.** macOS does not expose system Screen Time totals
+   without Full Disk Access (Knowledge DB) or a DeviceActivity report extension.
+   `ScreenTimeService` samples `NSWorkspace.frontmostApplication` every 5 s,
+   excludes idle/sleep and system UI, and persists today's totals in
+   UserDefaults. Do not present it as Apple's Screen Time number.
+10. **Server is a placeholder.** `ServerStatusService.check()` is the single
+    integration point. Keep the `Status` cases and `ServerPane` layout; replace
+    the body with the agreed endpoint/command when the user specifies it.
+11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 
 ## Release checklist
@@ -79,7 +88,8 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 2. `ARCHS="arm64 x86_64" ./build.sh`
 3. `./build/Islet.app/Contents/MacOS/Islet --snapshot build/snapshots` and update
    `docs/preview-*.png`.
-4. `ditto -c -k --keepParent build/Islet.app build/Islet-$VERSION.zip`
-5. `gh release create v$VERSION build/Islet-$VERSION.zip`
+4. Build the DMG:
+   `hdiutil create -volname "Islet" -srcfolder build/dmg -ov -format UDZO build/Islet-$VERSION.dmg`
+5. `gh release create v$VERSION build/Islet-$VERSION.dmg`
 6. Update `Casks/islet.rb` in the `homebrew-islet` tap with the new version and
-   `shasum -a 256` of the zip.
+   `shasum -a 256` of the DMG.

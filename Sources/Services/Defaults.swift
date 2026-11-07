@@ -4,25 +4,23 @@ import Foundation
 /// controller cannot drift apart.
 enum Defaults {
     static let showMusic = "islet.showMusic"
-    static let showNetwork = "islet.showNetwork"
+    static let showScreenTime = "islet.showScreenTime"
     static let showControls = "islet.showControls"
     static let showCalendar = "islet.showCalendar"
-    static let compactSource = "islet.compactSource"
+    static let showServer = "islet.showServer"
     static let hoverExpand = "islet.hoverExpand"
     static let calmMotion = "islet.calmMotion"
     static let showBattery = "islet.showBattery"
-    static let showSource = "islet.showSource"
 
     static let registered: [String: Any] = [
         showMusic: true,
-        showNetwork: true,
+        showScreenTime: true,
         showControls: true,
         showCalendar: true,
-        compactSource: "auto",
+        showServer: true,
         hoverExpand: true,
         calmMotion: false,
         showBattery: true,
-        showSource: true,
     ]
 
     static func register() {
@@ -30,25 +28,22 @@ enum Defaults {
     }
 }
 
-enum ByteFormat {
-    private static func formatter(_ units: ByteCountFormatter.Units) -> ByteCountFormatter {
-        let f = ByteCountFormatter()
-        f.allowedUnits = units
-        f.countStyle = .file
-        f.allowsNonnumericFormatting = false
-        f.isAdaptive = true
-        return f
+enum ScreenTimeFormat {
+    static func duration(_ seconds: TimeInterval) -> String {
+        let total = max(Int(seconds.rounded()), 0)
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        if hours > 0 { return "\(hours)h \(minutes)m" }
+        return "\(minutes)m"
     }
 
-    static func bytes(_ value: UInt64) -> String {
-        if value == 0 { return "0 KB" }
-        return formatter([.useKB, .useMB, .useGB]).string(fromByteCount: Int64(value))
-    }
-
-    static func rate(_ value: Double) -> String {
-        guard value >= 1 else { return "0 KB/s" }
-        let text = formatter([.useKB, .useMB, .useGB]).string(fromByteCount: Int64(value))
-        return text + "/s"
+    static func compact(_ seconds: TimeInterval) -> String {
+        let total = max(Int(seconds.rounded()), 0)
+        if total <= 0 { return "0m" }
+        if total >= 3600 {
+            return String(format: "%dh %02dm", total / 3600, (total % 3600) / 60)
+        }
+        return "\(max(1, total / 60))m"
     }
 }
 

@@ -3,14 +3,15 @@ import AppKit
 
 struct SettingsView: View {
     @EnvironmentObject private var calendar: CalendarService
-    @EnvironmentObject private var network: NetworkMonitor
+    @EnvironmentObject private var screenTime: ScreenTimeService
+    @EnvironmentObject private var server: ServerStatusService
     @EnvironmentObject private var nowPlaying: NowPlaying
 
     @AppStorage(Defaults.showMusic) private var showMusic = true
-    @AppStorage(Defaults.showNetwork) private var showNetwork = true
+    @AppStorage(Defaults.showScreenTime) private var showScreenTime = true
     @AppStorage(Defaults.showControls) private var showControls = true
     @AppStorage(Defaults.showCalendar) private var showCalendar = true
-    @AppStorage(Defaults.compactSource) private var compactSource = "auto"
+    @AppStorage(Defaults.showServer) private var showServer = true
     @AppStorage(Defaults.hoverExpand) private var hoverExpand = true
     @AppStorage(Defaults.calmMotion) private var calmMotion = false
     @AppStorage(Defaults.showBattery) private var showBattery = true
@@ -28,10 +29,10 @@ struct SettingsView: View {
                     isOn: $showMusic
                 )
                 moduleRow(
-                    icon: "arrow.up.arrow.down",
-                    title: "Network",
-                    subtitle: "Today's usage, live rate and a seven-day chart",
-                    isOn: $showNetwork
+                    icon: "hourglass",
+                    title: "Screen Time",
+                    subtitle: "Today's frontmost-app time and top apps",
+                    isOn: $showScreenTime
                 )
                 moduleRow(
                     icon: "slider.horizontal.3",
@@ -45,23 +46,16 @@ struct SettingsView: View {
                     subtitle: "Today's events and one-click meeting links",
                     isOn: $showCalendar
                 )
+                moduleRow(
+                    icon: "server.rack",
+                    title: "Server",
+                    subtitle: "Placeholder for your server-status integration",
+                    isOn: $showServer
+                )
             } header: {
                 Text("Modules")
             } footer: {
-                Text("Disabled modules disappear from the island and from its tab bar.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Compact view") {
-                Picker("Show in the collapsed island", selection: $compactSource) {
-                    Text("Auto").tag("auto")
-                    Text("Music").tag("music")
-                    Text("Network").tag("network")
-                    Text("Calendar").tag("calendar")
-                }
-                .pickerStyle(.segmented)
-                Text("Auto shows music while it plays, the next event within an hour, otherwise today's network total.")
+                Text("Disabled modules disappear from the island and from its tab bar. Hover the notch to open the island; the collapsed state merges with the notch.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -84,6 +78,34 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Screen Time") {
+                HStack {
+                    Text("Today")
+                    Spacer()
+                    Text(ScreenTimeFormat.duration(screenTime.todaySeconds))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Button("Reset screen time data") {
+                    screenTime.reset()
+                }
+                Text("Tracked locally while Islet runs. macOS does not expose system Screen Time to third-party apps without Full Disk Access, so this is a local estimate, not Apple's number.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Server") {
+                HStack {
+                    Label("Status", systemImage: "server.rack")
+                    Spacer()
+                    Text(serverStatus)
+                        .foregroundStyle(.secondary)
+                }
+                Text("This tab is a placeholder. Tell Islet how to reach your server (URL, command or API) and it will show uptime, latency and services here.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Media") {
                 HStack {
                     Label("Browser playback", systemImage: "safari")
@@ -94,19 +116,6 @@ struct SettingsView: View {
                 Text("Safari, Chrome, Brave, Arc and Firefox report through the system now-playing service. Islet reads it locally; nothing is sent anywhere.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
-
-            Section("Network") {
-                HStack {
-                    Text("Today")
-                    Spacer()
-                    Text(ByteFormat.bytes(network.todayTotal))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                Button("Reset network history") {
-                    network.reset()
-                }
             }
 
             Section("Permissions") {
@@ -179,6 +188,15 @@ struct SettingsView: View {
         return "Starting…"
     }
 
+    private var serverStatus: String {
+        switch server.status {
+        case .notConfigured: return "Not configured"
+        case .checking: return "Checking"
+        case .online(_): return "Online"
+        case .offline: return "Offline"
+        }
+    }
+
     private var calendarStatus: String {
         switch calendar.status {
         case .fullAccess: return "Allowed"
@@ -190,7 +208,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2.0"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.0"
         return "v\(short)"
     }
 

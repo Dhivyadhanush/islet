@@ -7,10 +7,11 @@ final class IslandController {
     private let state: IslandState
     private let panel: IslandPanel
     private let nowPlaying: NowPlaying
-    private let network: NetworkMonitor
+    private let screenTime: ScreenTimeService
     private let controls: SystemControls
     private let calendar: CalendarService
     private let battery: BatteryMonitor
+    private let server: ServerStatusService
 
     private var expandWork: DispatchWorkItem?
     private var collapseWork: DispatchWorkItem?
@@ -21,17 +22,19 @@ final class IslandController {
     init(
         state: IslandState,
         nowPlaying: NowPlaying,
-        network: NetworkMonitor,
+        screenTime: ScreenTimeService,
         controls: SystemControls,
         calendar: CalendarService,
-        battery: BatteryMonitor
+        battery: BatteryMonitor,
+        server: ServerStatusService
     ) {
         self.state = state
         self.nowPlaying = nowPlaying
-        self.network = network
+        self.screenTime = screenTime
         self.controls = controls
         self.calendar = calendar
         self.battery = battery
+        self.server = server
         self.panel = IslandPanel()
 
         let geometry = IslandGeometry.read(from: Self.preferredScreen())
@@ -41,10 +44,11 @@ final class IslandController {
             IslandRootView()
                 .environmentObject(state)
                 .environmentObject(nowPlaying)
-                .environmentObject(network)
+                .environmentObject(screenTime)
                 .environmentObject(controls)
                 .environmentObject(calendar)
                 .environmentObject(battery)
+                .environmentObject(server)
                 .padding(.horizontal, 10)
                 .padding(.bottom, 10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

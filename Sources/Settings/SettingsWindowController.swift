@@ -5,12 +5,19 @@ import SwiftUI
 final class SettingsWindowController {
     private var window: NSWindow?
     private let calendar: CalendarService
-    private let network: NetworkMonitor
+    private let screenTime: ScreenTimeService
+    private let server: ServerStatusService
     private let nowPlaying: NowPlaying
 
-    init(calendar: CalendarService, network: NetworkMonitor, nowPlaying: NowPlaying) {
+    init(
+        calendar: CalendarService,
+        screenTime: ScreenTimeService,
+        server: ServerStatusService,
+        nowPlaying: NowPlaying
+    ) {
         self.calendar = calendar
-        self.network = network
+        self.screenTime = screenTime
+        self.server = server
         self.nowPlaying = nowPlaying
     }
 
@@ -18,7 +25,8 @@ final class SettingsWindowController {
         if window == nil {
             let root = SettingsView()
                 .environmentObject(calendar)
-                .environmentObject(network)
+                .environmentObject(screenTime)
+                .environmentObject(server)
                 .environmentObject(nowPlaying)
             let hosting = NSHostingController(rootView: root)
             let newWindow = NSWindow(contentViewController: hosting)

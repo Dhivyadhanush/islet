@@ -18,21 +18,21 @@ enum Snapshot {
         )
 
         let nowPlaying = NowPlaying()
-        let network = NetworkMonitor()
+        let screenTime = ScreenTimeService()
         let controls = SystemControls()
         let calendar = CalendarService()
         let battery = BatteryMonitor()
-        battery.previewSeed(percentage: 82, charging: true)
+        let server = ServerStatusService()
 
-        let sample = sampleHistory()
-        network.previewSeed(
-            down: sample.last?.down ?? 0,
-            up: sample.last?.up ?? 0,
-            rate: 2_400_000,
-            history: sample
-        )
+        battery.previewSeed(percentage: 82, charging: true)
         controls.previewSeed(volume: 0.62, brightness: 0.78)
         calendar.previewSeed(status: .fullAccess, events: sampleEvents())
+        screenTime.previewSeed(
+            total: 2 * 3600 + 22 * 60,
+            apps: sampleApps(),
+            hourly: sampleHours(),
+            since: Date().addingTimeInterval(-3 * 3600)
+        )
 
         let track = NowPlaying.Track(
             title: "Strawberry Milkshakes",
@@ -50,43 +50,35 @@ enum Snapshot {
             IslandRootView()
                 .environmentObject(state)
                 .environmentObject(nowPlaying)
-                .environmentObject(network)
+                .environmentObject(screenTime)
                 .environmentObject(controls)
                 .environmentObject(calendar)
                 .environmentObject(battery)
+                .environmentObject(server)
         )
 
-        // Collapsed: network.
-        UserDefaults.standard.set("network", forKey: Defaults.compactSource)
+        // The collapsed state is the notch silhouette; useful as a sanity check.
         state.expanded = false
-        render(root, size: state.geometry.collapsedSize, name: "01-collapsed-network", directory: directoryURL)
+        render(root, size: state.geometry.collapsedSize, name: "00-collapsed-notch", directory: directoryURL)
 
-        // Collapsed: music.
-        UserDefaults.standard.set("music", forKey: Defaults.compactSource)
-        nowPlaying.previewSet(track, position: 43)
-        render(root, size: state.geometry.collapsedSize, name: "02-collapsed-music", directory: directoryURL)
-
-        // Collapsed: next event.
-        UserDefaults.standard.set("calendar", forKey: Defaults.compactSource)
-        render(root, size: state.geometry.collapsedSize, name: "03-collapsed-calendar", directory: directoryURL)
-
-        UserDefaults.standard.set("auto", forKey: Defaults.compactSource)
-
-        // Expanded panes.
         state.expanded = true
         let expanded = state.geometry.expandedSize
 
+        nowPlaying.previewSet(track, position: 43)
         state.tab = .music
-        render(root, size: expanded, name: "04-expanded-music", directory: directoryURL)
+        render(root, size: expanded, name: "01-expanded-music", directory: directoryURL)
 
-        state.tab = .network
-        render(root, size: expanded, name: "05-expanded-network", directory: directoryURL)
+        state.tab = .screenTime
+        render(root, size: expanded, name: "02-expanded-screentime", directory: directoryURL)
 
         state.tab = .controls
-        render(root, size: expanded, name: "06-expanded-controls", directory: directoryURL)
+        render(root, size: expanded, name: "03-expanded-controls", directory: directoryURL)
 
         state.tab = .calendar
-        render(root, size: expanded, name: "07-expanded-calendar", directory: directoryURL)
+        render(root, size: expanded, name: "04-expanded-calendar", directory: directoryURL)
+
+        state.tab = .server
+        render(root, size: expanded, name: "05-expanded-server", directory: directoryURL)
 
         print("Snapshots written to \(directoryURL.path)")
     }
@@ -106,27 +98,37 @@ enum Snapshot {
         print("wrote \(name).png")
     }
 
-    private static func sampleHistory() -> [NetworkMonitor.DayUsage] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let values: [(UInt64, UInt64)] = [
-            (2_100_000_000, 240_000_000),
-            (800_000_000, 90_000_000),
-            (3_400_000_000, 410_000_000),
-            (1_200_000_000, 130_000_000),
-            (2_800_000_000, 300_000_000),
-            (900_000_000, 110_000_000),
-            (1_100_000_000, 120_000_000),
+    private static func sampleApps() -> [ScreenTimeService.AppUsage] {
+        [
+            ScreenTimeService.AppUsage(
+                id: "com.apple.dt.Xcode",
+                name: "Xcode",
+                seconds: 3600 + 12 * 60,
+                icon: NSImage(systemSymbolName: "hammer.fill", accessibilityDescription: nil)
+            ),
+            ScreenTimeService.AppUsage(
+                id: "com.apple.Safari",
+                name: "Safari",
+                seconds: 48 * 60,
+                icon: NSImage(systemSymbolName: "safari.fill", accessibilityDescription: nil)
+            ),
+            ScreenTimeService.AppUsage(
+                id: "com.apple.Terminal",
+                name: "Terminal",
+                seconds: 22 * 60,
+                icon: NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: nil)
+            ),
         ]
-        return (0..<7).compactMap { index in
-            guard let date = calendar.date(byAdding: .day, value: index - 6, to: today) else { return nil }
-            return NetworkMonitor.DayUsage(
-                key: "sample-\(index)",
-                date: date,
-                down: values[index].0,
-                up: values[index].1
-            )
+    }
+
+    private static func sampleHours() -> [Double] {
+        var hours = Array(repeating: 0.0, count: 24)
+        let now = Calendar.current.component(.hour, from: Date())
+        for offset in 0..<4 {
+            let hour = (now - offset + 24) % 24
+            hours[hour] = Double(600 + offset * 900)
         }
+        return hours
     }
 
     private static func sampleEvents() -> [CalendarService.EventItem] {
@@ -159,7 +161,7 @@ enum Snapshot {
             ),
             CalendarService.EventItem(
                 id: "sample-3",
-                title: "Ship Islet 0.1",
+                title: "Ship Islet",
                 start: offset(240),
                 end: offset(285),
                 isAllDay: false,

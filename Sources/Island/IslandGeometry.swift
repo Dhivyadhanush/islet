@@ -8,14 +8,13 @@ struct IslandGeometry {
 
     var hasNotch: Bool { notchHeight > 0.5 && notchWidth > 40 }
 
+    /// Collapsed on a notched Mac is exactly the notch silhouette, so the island
+    /// disappears into the cutout. On a normal display it becomes a small pill.
     var collapsedSize: CGSize {
         if hasNotch {
-            return CGSize(
-                width: min(notchWidth + 72, screenFrame.width - 40),
-                height: notchHeight + 26
-            )
+            return CGSize(width: notchWidth, height: notchHeight)
         }
-        return CGSize(width: 248, height: 34)
+        return CGSize(width: 150, height: 30)
     }
 
     var expandedSize: CGSize {
@@ -24,11 +23,6 @@ struct IslandGeometry {
             height: hasNotch ? notchHeight + 204 : 232
         )
     }
-
-    /// The island hangs from the top edge on notched Macs so it merges with the
-    /// cutout. Without a notch it becomes a floating pill with rounded corners.
-    var topRadius: CGFloat { hasNotch ? 0 : 18 }
-    var bottomRadius: CGFloat { hasNotch ? 26 : 17 }
 
     static func read(from screen: NSScreen) -> IslandGeometry {
         let top = screen.safeAreaInsets.top

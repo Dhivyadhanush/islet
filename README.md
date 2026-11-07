@@ -1,8 +1,9 @@
 # Islet
 
-A minimal, native dynamic island for the MacBook notch. Music, network, system
-controls and calendar in one quiet black pill — built with SwiftUI and AppKit,
-with no Electron, no web views and no analytics.
+A minimal, native dynamic island for the MacBook notch. Music, Screen Time,
+system controls, calendar and a server slot — built with SwiftUI and AppKit,
+with no Electron, no web views and no analytics. When idle it disappears into
+the notch; hover the notch to open it.
 
 <p align="center">
   <img src="docs/preview-music.png" width="700" alt="Islet music player">
@@ -11,29 +12,31 @@ with no Electron, no web views and no analytics.
 ## What it does
 
 - **Music that actually follows the system.** Apple Music, Spotify and browser
-  playback (Safari, Chrome, Brave, Arc, Firefox) appear in the island with
+  playback (Safari, Chrome, Brave, Arc, Firefox, Zen) appear in the island with
   artwork, title, artist, source app, scrubbable progress and transport
   controls.
-- **Network, per day.** Today's download/upload total, a live rate with a
-  breathing indicator, and a seven-day bar chart. Counters are read from the
-  kernel and stored locally.
+- **Screen Time.** Today's frontmost-app time, a stacked app breakdown, top
+  apps and a local estimate that starts the moment Islet is running.
 - **Volume and brightness.** Thin, fast sliders backed by CoreAudio and
   DisplayServices. Mute with one click.
 - **Calendar.** Today's events, an ongoing-event highlight, and a **Join**
   button when an event contains a meeting link.
+- **Server.** A placeholder tab ready for the uptime/latency integration; the
+  status enum and pane are already in place.
 - **Battery.** A tiny battery/charging readout in the expanded header.
-- **Configurable.** Enable or disable any module, choose what the collapsed
-  island shows, pin it open, or let it expand on hover.
+- **Configurable.** Enable or disable any module, pin it open, or let it expand
+  on hover.
 - **Calm motion.** A spring-based morph with a sliding tab pill and a soft
-  content scale. Turn on **Calm animations** for less overshoot.
+  content scale. The collapsed island is the notch silhouette, not a bar that
+  extends into the menu bar.
 
 <p align="center">
-  <img src="docs/preview-network.png" width="340" alt="Network">
+  <img src="docs/preview-screentime.png" width="340" alt="Screen Time">
   <img src="docs/preview-controls.png" width="340" alt="Controls">
 </p>
 <p align="center">
   <img src="docs/preview-calendar.png" width="340" alt="Calendar">
-  <img src="docs/preview-compact.png" width="340" alt="Collapsed island">
+  <img src="docs/preview-server.png" width="340" alt="Server placeholder">
 </p>
 
 ## Install with Homebrew
@@ -53,9 +56,9 @@ sudo xattr -dr com.apple.quarantine /Applications/Islet.app
 open /Applications/Islet.app
 ```
 
-Islet lives in the menu bar. Hover the notch (or click the pill) to open it;
-click anywhere outside to close it. The menu bar item has settings, launch at
-login and quit.
+Islet lives in the menu bar. Hover the notch itself (the collapsed island is
+the notch silhouette) or click just below it to open the card; click anywhere
+outside to close it. The menu bar item has settings, launch at login and quit.
 
 ## Browser media
 
@@ -104,7 +107,7 @@ were produced.
 | Feature | Permission |
 | --- | --- |
 | Music / browser media | None (system now-playing service) |
-| Network | None |
+| Screen Time | None (local frontmost-app tracker) |
 | Volume | None (CoreAudio) |
 | Brightness | None (DisplayServices, built-in display) |
 | Calendar | Calendar access, requested when you tap **Connect** |
@@ -116,18 +119,22 @@ frameworks. It does not send data anywhere.
 
 Open **Settings** from the menu bar or the gear in the island.
 
-- Modules: Music, Network, Controls, Calendar.
-- Compact view: Auto / Music / Network / Calendar.
+- Modules: Music, Screen Time, Controls, Calendar, Server.
 - Behavior: expand on hover, battery in header, launch at login.
 - Motion: Calm animations.
-- Network: today's total and a reset button.
+- Screen Time: today's total and a reset button.
+- Server: integration status (placeholder for now).
 - Media: helper status.
 - Permissions: calendar status and a shortcut to System Settings.
 
 ## Known limitations
 
-- Daily network totals accumulate while Islet is running; the kernel counters
-  are since boot, so usage while the app is closed is not backfilled.
+- **Screen Time is a local estimate.** macOS does not expose system Screen Time
+  totals to third-party apps without Full Disk Access or a DeviceActivity report
+  extension. Islet tracks the frontmost app while it runs and excludes idle and
+  sleep time; it does not include usage before Islet launched.
+- **Server status is a placeholder.** The pane and status enum are ready; the
+  actual endpoint/command integration is the next step.
 - Brightness applies to the built-in display. External displays are left alone.
 - The app is ad-hoc signed. A Developer ID build would remove the Gatekeeper
   warning; the source is here if you want to sign it yourself.
@@ -137,19 +144,21 @@ Open **Settings** from the menu bar or the gear in the island.
 
 ```
 SwiftUI island (NSPanel, .statusBar, non-activating)
-├── CompactView        one line: music / next event / network
+├── collapsed          the notch silhouette (square top, 12 pt bottom radius)
 ├── ExpandedView       sliding tabs + battery + pin + settings
 │   ├── MusicPane      MediaRemote helper + seek + source badge
-│   ├── NetworkPane    getifaddrs counters + 7-day chart
+│   ├── ScreenTimePane local frontmost-app tracker + app breakdown
 │   ├── ControlsPane   CoreAudio volume + DisplayServices brightness
-│   └── CalendarPane   EventKit + meeting-link Join
-└── Services           NowPlaying, NetworkMonitor, SystemControls,
-                       CalendarService, BatteryMonitor, MediaBridge
+│   ├── CalendarPane   EventKit + meeting-link Join
+│   └── ServerPane     placeholder for the server integration
+└── Services           NowPlaying, ScreenTimeService, SystemControls,
+                       CalendarService, BatteryMonitor, ServerStatusService,
+                       MediaBridge
 ```
 
-The window is exactly the island plus a 10 pt transparent margin so the spring
-can overshoot without clipping. The top edge stays flush with the screen, which
-is what makes it read as part of the notch.
+The collapsed window is exactly the notch plus a 10 pt transparent hover margin.
+The expanded window keeps the top edge flush and adds 10 pt of transparent room
+on each side and below so the spring overshoot is never clipped.
 
 ## Credits
 

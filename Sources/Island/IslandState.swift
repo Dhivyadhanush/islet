@@ -3,27 +3,30 @@ import AppKit
 
 enum IslandTab: String, CaseIterable, Identifiable {
     case music
-    case network
+    case screenTime
     case controls
     case calendar
+    case server
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .music: return "Music"
-        case .network: return "Network"
+        case .screenTime: return "Screen Time"
         case .controls: return "Controls"
         case .calendar: return "Calendar"
+        case .server: return "Server"
         }
     }
 
     var icon: String {
         switch self {
         case .music: return "music.note"
-        case .network: return "arrow.up.arrow.down"
+        case .screenTime: return "hourglass"
         case .controls: return "slider.horizontal.3"
         case .calendar: return "calendar"
+        case .server: return "server.rack"
         }
     }
 }
