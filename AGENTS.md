@@ -77,15 +77,21 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    `ScreenTimeService` samples `NSWorkspace.frontmostApplication` every 5 s,
    excludes idle/sleep and system UI, and persists today's totals in
    UserDefaults. Do not present it as Apple's Screen Time number.
-10. **Server is Beszel-backed.** `BeszelClient` authenticates to PocketBase
-    (`POST /api/collections/users/auth-with-password`) and reads `systems` plus
-    `system_stats`. The hub URL/email/Access client ID live in UserDefaults; the
+10. **Server is Beszel-backed and multi-system.** `BeszelClient.fetch` returns
+    every system sorted by `created`; Server1 is first and the Pi below. The
+    Server tab shows CPU/RAM/disk plus network `b` [sent, recv bytes/s] and the
+    active `ni` interface (KB/s). Auth uses PocketBase
+    (`POST /api/collections/users/auth-with-password`) and reads `systems` +
+    `system_stats`. Hub URL/email/Access client ID live in UserDefaults; the
     password and Access secret live in Keychain. Cloudflare Access service-token
     headers are supported. `--beszel-test` reads `BESZEL_URL`, `BESZEL_EMAIL`,
     `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`. The
     `NSAllowsLocalNetworking` ATS key permits local/tunnel HTTP for testing.
     `--beszel-save` writes the same config headlessly; run it from the installed
     app so the Keychain item is created with the app's own signature.
+    The Pi runs the armv7 agent as `beszel-agent.service`, configured in
+    `/etc/beszel-agent.conf` with `KEY`, `HUB_URL=http://192.168.1.22:8090` and
+    the per-system `TOKEN` from the `fingerprints` collection.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 

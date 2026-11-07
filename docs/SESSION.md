@@ -211,3 +211,22 @@ needs the read-only Beszel user.
   `Server1 [up]`, CPU ~3%, RAM ~27%, disk ~22%, uptime ~8d 11h.
 - The account used is an admin account; a read-only Beszel user is still the
   recommended follow-up for daily use.
+
+## Phase 5 — Raspberry Pi agent + multi-system/network Server tab (7 Nov 2026)
+
+Request: install the monitor on the Raspberry Pi as well, show it below Server1,
+and add network details.
+
+- Installed Beszel agent 0.21.1 for armv7 on `Rasberry` (Raspbian 13) from the
+  `.deb`; systemd service `beszel-agent.service` is enabled.
+- Config `/etc/beszel-agent.conf` (0600): `KEY` (hub public key),
+  `HUB_URL=http://192.168.1.22:8090`, `TOKEN` (per-system fingerprint token).
+- Created the `Raspberry Pi` system + `fingerprints` token through the admin
+  API. The agent connects to the hub over WebSocket and also exposes its SSH
+  server on 45876.
+- Beszel now reports two systems: `Server1` and `Raspberry Pi`, both `up`.
+- `BeszelClient.fetch` returns all systems sorted by `created`; the Server tab
+  lists Server1 first and Raspberry Pi below.
+- Network details use `b` [sent, received bytes/s] and `ni` interface counters;
+  the active interface is chosen and shown as e.g. `wlan0 ↓ 3.1 KB/s ↑ 3.6 KB/s`.
+- Version 0.6.0.

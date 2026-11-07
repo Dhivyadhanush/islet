@@ -25,7 +25,7 @@ final class ServerStatusService: ObservableObject {
     }
 
     @Published private(set) var status: Status = .notConfigured
-    @Published private(set) var metrics: BeszelMetrics?
+    @Published private(set) var systems: [BeszelMetrics] = []
     @Published private(set) var lastError: String?
     @Published private(set) var lastUpdated: Date?
     @Published private(set) var isRefreshing = false
@@ -57,6 +57,10 @@ final class ServerStatusService: ObservableObject {
         return !config.baseURL.isEmpty && !config.email.isEmpty && config.hasPassword
     }
 
+    var onlineCount: Int {
+        systems.filter(\.isOnline).count
+    }
+
     func start() {
         guard timer == nil else { return }
         if isConfigured { refresh() }
@@ -81,20 +85,20 @@ final class ServerStatusService: ObservableObject {
         guard !isRefreshing else { return }
         guard let config = currentConfig() else {
             status = .notConfigured
-            metrics = nil
+            systems = []
             return
         }
 
         isRefreshing = true
-        if metrics == nil { status = .checking }
+        if systems.isEmpty { status = .checking }
 
         Task {
             do {
                 let fetched = try await client.fetch(config: config)
-                metrics = fetched
+                systems = fetched
                 lastError = nil
                 lastUpdated = Date()
-                status = fetched.isOnline ? .online : .offline
+                status = fetched.contains(where: \.isOnline) ? .online : .offline
             } catch {
                 lastError = error.localizedDescription
                 status = .error(error.localizedDescription)
@@ -117,7 +121,7 @@ final class ServerStatusService: ObservableObject {
             accessClientID: accessClientID,
             accessClientSecret: accessClientSecret
         )
-        metrics = nil
+        systems = []
         lastError = nil
         refresh()
     }
@@ -151,17 +155,17 @@ final class ServerStatusService: ObservableObject {
         defaults.removeObject(forKey: Keys.accessID)
         Keychain.delete(account: Keys.passwordAccount)
         Keychain.delete(account: Keys.accessSecretAccount)
-        metrics = nil
+        systems = []
         lastError = nil
         lastUpdated = nil
         status = .notConfigured
     }
 
     /// Used by `--snapshot` to render the online dashboard.
-    func previewSeed(metrics: BeszelMetrics) {
-        self.metrics = metrics
-        lastUpdated = metrics.updatedAt
-        status = metrics.isOnline ? .online : .offline
+    func previewSeed(systems: [BeszelMetrics]) {
+        self.systems = systems
+        lastUpdated = systems.first?.updatedAt ?? Date()
+        status = systems.contains(where: \.isOnline) ? .online : .offline
     }
 
     private func currentConfig() -> BeszelConfig? {

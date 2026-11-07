@@ -9,8 +9,10 @@ struct BeszelConfig: Equatable {
 }
 
 struct BeszelMetrics: Equatable {
+    var id: String
     var name: String
     var hostname: String
+    var host: String
     var status: String
     var cpuPercent: Double
     var memoryPercent: Double
@@ -19,6 +21,9 @@ struct BeszelMetrics: Equatable {
     var diskPercent: Double
     var diskUsedGB: Double?
     var diskTotalGB: Double?
+    var networkSentBytesPerSecond: Double
+    var networkReceivedBytesPerSecond: Double
+    var interfaces: [String]
     var uptimeSeconds: Double
     var cores: Int
     var threads: Int
@@ -27,6 +32,7 @@ struct BeszelMetrics: Equatable {
     var updatedAt: Date
 
     var isOnline: Bool { status == "up" }
+    var primaryInterface: String { interfaces.first ?? "" }
 }
 
 enum BeszelError: LocalizedError {
@@ -55,7 +61,7 @@ enum BeszelError: LocalizedError {
     }
 }
 
-/// Minimal Beszel/PocketBase client.
+/// Minimal Beszel/PocketBase client for all systems visible to the account.
 ///
 /// Auth:  POST /api/collections/users/auth-with-password
 /// Data:  GET  /api/collections/systems/records
@@ -67,7 +73,7 @@ final class BeszelClient {
     private var token: String?
     private var tokenDate: Date?
 
-    func fetch(config: BeszelConfig) async throws -> BeszelMetrics {
+    func fetch(config: BeszelConfig) async throws -> [BeszelMetrics] {
         guard !config.baseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !config.email.isEmpty,
               !config.password.isEmpty
@@ -76,62 +82,69 @@ final class BeszelClient {
         let base = try normalizedBase(config.baseURL)
 
         do {
-            return try await fetchOnce(base: base, config: config, token: try await authToken(base: base, config: config, force: false))
+            let token = try await authToken(base: base, config: config, force: false)
+            return try await fetchOnce(base: base, config: config, token: token)
         } catch BeszelError.requestFailed(401, _) {
-            return try await fetchOnce(base: base, config: config, token: try await authToken(base: base, config: config, force: true))
+            let token = try await authToken(base: base, config: config, force: true)
+            return try await fetchOnce(base: base, config: config, token: token)
         }
     }
 
-    private func fetchOnce(base: URL, config: BeszelConfig, token: String) async throws -> BeszelMetrics {
+    private func fetchOnce(base: URL, config: BeszelConfig, token: String) async throws -> [BeszelMetrics] {
         let systemsResponse = try await getJSON(
             base: base,
             path: "/api/collections/systems/records",
             query: [
                 URLQueryItem(name: "perPage", value: "50"),
-                URLQueryItem(name: "sort", value: "name"),
+                URLQueryItem(name: "sort", value: "created"),
             ],
             token: token,
             config: config
         )
 
         guard let items = systemsResponse["items"] as? [[String: Any]],
-              let system = items.first
+              !items.isEmpty
         else { throw BeszelError.noSystems }
 
-        let systemID = system["id"] as? String ?? ""
-        let name = system["name"] as? String ?? "server"
-        let status = system["status"] as? String ?? "unknown"
+        var result: [BeszelMetrics] = []
+        for system in items {
+            result.append(await metrics(for: system, base: base, config: config, token: token))
+        }
+        return result
+    }
+
+    private func metrics(
+        for system: [String: Any],
+        base: URL,
+        config: BeszelConfig,
+        token: String
+    ) async -> BeszelMetrics {
+        let systemID = string(system["id"])
+        let name = string(system["name"]).isEmpty ? "server" : string(system["name"])
+        let status = string(system["status"])
+        let host = string(system["host"])
         let info = dictionary(system["info"])
 
         var stats: [String: Any] = [:]
-        if !systemID.isEmpty {
-            // The read-only role may not be allowed to list every collection.
-            // The system info still carries the percentages, so this is optional.
-            if let response = try? await getJSON(
-                base: base,
-                path: "/api/collections/system_stats/records",
-                query: [
-                    URLQueryItem(name: "perPage", value: "1"),
-                    URLQueryItem(name: "sort", value: "-created"),
-                    URLQueryItem(name: "filter", value: "(system='\(systemID)')"),
-                ],
-                token: token,
-                config: config
-            ), let records = response["items"] as? [[String: Any]],
-               let latest = records.first {
-                stats = dictionary(latest["stats"])
-            }
+        if !systemID.isEmpty,
+           let response = try? await getJSON(
+               base: base,
+               path: "/api/collections/system_stats/records",
+               query: [
+                   URLQueryItem(name: "perPage", value: "1"),
+                   URLQueryItem(name: "sort", value: "-created"),
+                   URLQueryItem(name: "filter", value: "(system='\(systemID)')"),
+               ],
+               token: token,
+               config: config
+           ),
+           let records = response["items"] as? [[String: Any]],
+           let latest = records.first {
+            stats = dictionary(latest["stats"])
         }
 
-        let cpu = number(info["cpu"])
         let memoryPercent = number(info["mp"])
         let diskPercent = number(info["dp"])
-        let uptime = number(info["u"])
-        let cores = Int(number(info["c"]))
-        let threads = Int(number(info["t"]))
-        let model = string(info["m"])
-        let hostname = string(info["h"])
-        let os = string(info["o"])
 
         var memoryUsed: UInt64?
         var memoryTotal: UInt64?
@@ -147,24 +160,68 @@ final class BeszelClient {
             diskUsed = number(stats["du"])
         }
 
+        let interfaces = interfaceList(stats["ni"])
+        let bandwidth = stats["b"] as? [Any] ?? []
+        let sent = bandwidth.count >= 2 ? number(bandwidth[0]) : 0
+        let received = bandwidth.count >= 2 ? number(bandwidth[1]) : 0
+
         return BeszelMetrics(
+            id: systemID,
             name: name,
-            hostname: hostname,
+            hostname: string(info["h"]),
+            host: host,
             status: status,
-            cpuPercent: cpu,
+            cpuPercent: number(info["cpu"]),
             memoryPercent: memoryPercent,
             memoryUsedBytes: memoryUsed,
             memoryTotalBytes: memoryTotal,
             diskPercent: diskPercent,
             diskUsedGB: diskUsed,
             diskTotalGB: diskTotal,
-            uptimeSeconds: uptime,
-            cores: cores,
-            threads: threads,
-            model: model,
-            os: os,
+            networkSentBytesPerSecond: sent,
+            networkReceivedBytesPerSecond: received,
+            interfaces: interfaces,
+            uptimeSeconds: number(info["u"]),
+            cores: Int(number(info["c"])),
+            threads: Int(number(info["t"])),
+            model: string(info["m"]),
+            os: string(info["o"]),
             updatedAt: Date()
         )
+    }
+
+    private func interfaceList(_ value: Any?) -> [String] {
+        guard let dictionary = value as? [String: Any] else { return [] }
+        var bestName = ""
+        var bestCurrent = -1.0
+        var bestTotalName = ""
+        var bestTotal = -1.0
+        var names: [String] = []
+
+        for (name, raw) in dictionary {
+            guard name != "lo" else { continue }
+            names.append(name)
+            if let counters = raw as? [Any], counters.count >= 4 {
+                let current = number(counters[0]) + number(counters[1])
+                let total = number(counters[2]) + number(counters[3])
+                if current > bestCurrent {
+                    bestCurrent = current
+                    bestName = name
+                }
+                if total > bestTotal {
+                    bestTotal = total
+                    bestTotalName = name
+                }
+            }
+        }
+
+        if bestCurrent <= 0 { bestName = bestTotalName }
+        names.sort()
+        if let index = names.firstIndex(of: bestName) {
+            names.remove(at: index)
+            names.insert(bestName, at: 0)
+        }
+        return names
     }
 
     private func authToken(base: URL, config: BeszelConfig, force: Bool) async throws -> String {

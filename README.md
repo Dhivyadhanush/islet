@@ -28,8 +28,9 @@ disappears into the notch; hover the notch to open it.
   DisplayServices. Mute with one click.
 - **Calendar.** Today's events, an ongoing-event highlight, and a **Join**
   button when an event contains a meeting link.
-- **Server status with Beszel.** CPU, RAM, disk, uptime and online/offline,
-  read from your Beszel hub with a read-only user.
+- **Server status with Beszel.** Every system in your hub — Server1, Raspberry
+  Pi, etc. — with CPU, RAM, disk, uptime and network ↓/↑, read with a read-only
+  user.
 - **Battery.** A tiny battery/charging readout in the expanded header.
 - **Configurable.** Enable or disable any module, pin it open, or let it expand
   on hover.
@@ -100,8 +101,9 @@ generic ping.
 4. **Configure the island.** Settings → Server (Beszel): hub URL
    `https://beszel.dhanush-vijay.uk`, read-only email/password, and the Access
    Client ID/Secret if Access is on. Save & Test.
-5. The tab shows online/offline, CPU, RAM (used/total), disk (used/total) and
-   uptime. It refreshes every 30 s.
+5. The tab lists every system the account can see. In the screenshot, `Server1`
+   and `Raspberry Pi` are separate rows; the Pi row includes `wlan0 ↓/↑` from
+   Beszel's `b` and `ni` network data. It refreshes every 30 s.
 
 For a local test before the domain is ready:
 
@@ -126,6 +128,24 @@ API used: `POST /api/collections/users/auth-with-password`,
 `GET /api/collections/system_stats/records`. The password and Access secret are
 stored in Keychain; the hub URL, email and Access client ID live in
 UserDefaults.
+
+### Raspberry Pi agent
+
+The Pi (`Rasberry`, armv7 Raspbian) runs the armv7 Beszel agent as a systemd
+service:
+
+| | |
+|---|---|
+| Package | `beszel-agent_0.21.1_linux_armv7.deb` |
+| Binary | `/usr/bin/beszel-agent` |
+| Service | `beszel-agent.service` (enabled) |
+| Config | `/etc/beszel-agent.conf` |
+| Hub | `HUB_URL=http://192.168.1.22:8090` |
+| Auth | `KEY` (hub public key) + `TOKEN` (system fingerprint token) |
+
+The hub shows the Pi as its own system; the island lists it under Server1 with
+`wlan0` network throughput. The agent connects outbound to the hub over
+WebSocket and also exposes its SSH server on `45876`.
 
 ## Build from source
 

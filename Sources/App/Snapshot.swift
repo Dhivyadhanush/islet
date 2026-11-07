@@ -28,7 +28,7 @@ enum Snapshot {
         battery.previewSeed(percentage: 82, charging: true)
         controls.previewSeed(volume: 0.62, brightness: 0.78)
         calendar.previewSeed(status: .fullAccess, events: sampleEvents())
-        server.previewSeed(metrics: sampleServerMetrics())
+        server.previewSeed(systems: sampleSystems())
         let history = sampleHistory()
         network.previewSeed(
             down: history.last?.down ?? 0,
@@ -134,25 +134,55 @@ enum Snapshot {
         }
     }
 
-    private static func sampleServerMetrics() -> BeszelMetrics {
-        BeszelMetrics(
-            name: "server",
-            hostname: "server",
-            status: "up",
-            cpuPercent: 4,
-            memoryPercent: 27,
-            memoryUsedBytes: 1_932_735_283,
-            memoryTotalBytes: 7_194_048_563,
-            diskPercent: 23,
-            diskUsedGB: 21,
-            diskTotalGB: 98,
-            uptimeSeconds: 8 * 86_400 + 11 * 3_600,
-            cores: 4,
-            threads: 4,
-            model: "AMD PRO A4-3350B APU",
-            os: "Ubuntu 24.04.5 LTS",
-            updatedAt: Date()
-        )
+    private static func sampleSystems() -> [BeszelMetrics] {
+        [
+            BeszelMetrics(
+                id: "sample-server1",
+                name: "Server1",
+                hostname: "server",
+                host: "/beszel_socket/beszel.sock",
+                status: "up",
+                cpuPercent: 4,
+                memoryPercent: 27,
+                memoryUsedBytes: 1_932_735_283,
+                memoryTotalBytes: 7_194_048_563,
+                diskPercent: 22,
+                diskUsedGB: 21,
+                diskTotalGB: 98,
+                networkSentBytesPerSecond: 1511,
+                networkReceivedBytesPerSecond: 1064,
+                interfaces: ["eth0", "tailscale0"],
+                uptimeSeconds: 8 * 86_400 + 11 * 3_600,
+                cores: 4,
+                threads: 4,
+                model: "AMD PRO A4-3350B APU",
+                os: "Ubuntu 24.04.5 LTS",
+                updatedAt: Date()
+            ),
+            BeszelMetrics(
+                id: "sample-pi",
+                name: "Raspberry Pi",
+                hostname: "Rasberry",
+                host: "192.168.1.19",
+                status: "up",
+                cpuPercent: 30,
+                memoryPercent: 21,
+                memoryUsedBytes: 205_520_896,
+                memoryTotalBytes: 964_689_920,
+                diskPercent: 10,
+                diskUsedGB: 2.8,
+                diskTotalGB: 29,
+                networkSentBytesPerSecond: 2943,
+                networkReceivedBytesPerSecond: 2523,
+                interfaces: ["wlan0", "eth0", "tailscale0"],
+                uptimeSeconds: 1 * 86_400 + 16 * 3_600,
+                cores: 4,
+                threads: 4,
+                model: "ARMv7",
+                os: "Raspbian 13",
+                updatedAt: Date()
+            ),
+        ]
     }
 
     private static func sampleApps() -> [ScreenTimeService.AppUsage] {

@@ -5,14 +5,11 @@ struct ServerPane: View {
     @EnvironmentObject private var state: IslandState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 5) {
                 MicroLabel(text: "Server")
                 Spacer()
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: 4, height: 4)
-                Text(statusLabel)
+                Text(headerStatus)
                     .font(.system(size: 8.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(Theme.tertiary)
                 Button {
@@ -28,8 +25,8 @@ struct ServerPane: View {
                 .help("Refresh now")
             }
 
-            if let metrics = server.metrics {
-                dashboard(metrics)
+            if !server.systems.isEmpty {
+                systemList
             } else {
                 switch server.status {
                 case .notConfigured:
@@ -44,90 +41,131 @@ struct ServerPane: View {
         .padding(.top, 1)
     }
 
-    private func dashboard(_ metrics: BeszelMetrics) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(metrics.name)
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(Theme.text)
-                    .lineLimit(1)
-                Spacer(minLength: 6)
-                Text(metrics.hostname.isEmpty ? metrics.os : metrics.hostname)
-                    .font(.system(size: 8.5))
-                    .foregroundStyle(Theme.tertiary)
-                    .lineLimit(1)
-            }
-
-            HStack(spacing: 10) {
-                metric(
-                    label: "CPU",
-                    value: metrics.cpuPercent,
-                    detail: metrics.cores > 0 ? "\(metrics.cores) cores" : ""
-                )
-                metric(
-                    label: "RAM",
-                    value: metrics.memoryPercent,
-                    detail: memoryDetail(metrics)
-                )
-                metric(
-                    label: "Disk",
-                    value: metrics.diskPercent,
-                    detail: diskDetail(metrics)
-                )
+    private var systemList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(server.systems.enumerated()), id: \.element.id) { index, system in
+                systemRow(system)
+                if index < server.systems.count - 1 {
+                    IslandDivider()
+                        .padding(.vertical, 3)
+                }
             }
 
             Spacer(minLength: 0)
 
             HStack(spacing: 4) {
-                Text("up \(uptimeString(metrics.uptimeSeconds))")
-                if !metrics.os.isEmpty {
-                    Text("·")
-                    Text(metrics.os).lineLimit(1)
+                if let error = server.lastError, !error.isEmpty {
+                    Text(error)
+                        .lineLimit(1)
+                } else {
+                    Text("updated \(TimeText.short(server.lastUpdated ?? Date()))")
+                    if server.isRefreshing {
+                        Text("· updating…")
+                    }
                 }
                 Spacer(minLength: 0)
-                Text(server.isRefreshing ? "updating…" : TimeText.short(server.lastUpdated ?? metrics.updatedAt))
             }
-            .font(.system(size: 8.5))
+            .font(.system(size: 8))
             .foregroundStyle(Theme.tertiary)
-
-            if let error = server.lastError, !error.isEmpty {
-                Text(error)
-                    .font(.system(size: 8))
-                    .foregroundStyle(Theme.tertiary)
-                    .lineLimit(1)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private func metric(label: String, value: Double, detail: String) -> some View {
-        let clamped = min(max(value / 100, 0), 1)
-        return VStack(alignment: .leading, spacing: 3) {
-            Text(label.uppercased())
-                .font(.system(size: 8, weight: .semibold))
-                .tracking(1)
-                .foregroundStyle(Theme.tertiary)
-            Text("\(Int(value.rounded()))%")
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(Theme.text)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.white.opacity(0.12))
-                        .frame(height: 2.5)
-                    Capsule()
-                        .fill(Color.white.opacity(0.85))
-                        .frame(width: max(2, geo.size.width * clamped), height: 2.5)
-                }
+    private func systemRow(_ system: BeszelMetrics) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(system.isOnline ? Color.white : Theme.tertiary)
+                    .frame(width: 4, height: 4)
+                Text(system.name)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Text(hostLabel(system))
+                    .font(.system(size: 8.5))
+                    .foregroundStyle(Theme.tertiary)
+                    .lineLimit(1)
             }
-            .frame(height: 2.5)
-            Text(detail.isEmpty ? " " : detail)
-                .font(.system(size: 8))
+
+            HStack(spacing: 5) {
+                metric("CPU", "\(Int(system.cpuPercent.rounded()))%")
+                separator
+                metric("RAM", "\(Int(system.memoryPercent.rounded()))%")
+                separator
+                metric("DISK", "\(Int(system.diskPercent.rounded()))%")
+                separator
+                metric("NET", networkText(system))
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func metric(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 7.5, weight: .semibold))
+                .tracking(0.7)
                 .foregroundStyle(Theme.tertiary)
+            Text(value)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(Theme.text.opacity(0.9))
                 .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var separator: some View {
+        Text("·")
+            .font(.system(size: 8))
+            .foregroundStyle(Theme.tertiary.opacity(0.5))
+    }
+
+    private func networkText(_ system: BeszelMetrics) -> String {
+        let down = rate(system.networkReceivedBytesPerSecond)
+        let up = rate(system.networkSentBytesPerSecond)
+        let interface = system.primaryInterface
+        let prefix = interface.isEmpty ? "" : "\(interface) "
+        return "\(prefix)↓ \(down) ↑ \(up)"
+    }
+
+    private func rate(_ bytes: Double) -> String {
+        if bytes >= 1_048_576 {
+            return String(format: "%.1f MB/s", bytes / 1_048_576)
+        }
+        if bytes >= 1024 {
+            let kilobytes = bytes / 1024
+            if kilobytes >= 10 {
+                return String(format: "%.0f KB/s", kilobytes)
+            }
+            return String(format: "%.1f KB/s", kilobytes)
+        }
+        return String(format: "%.0f B/s", bytes)
+    }
+
+    private func hostLabel(_ system: BeszelMetrics) -> String {
+        let hostname = system.hostname.isEmpty ? system.name : system.hostname
+        let host = system.host
+        if host.isEmpty
+            || host.hasPrefix("/")
+            || host == hostname
+            || host == "localhost"
+            || host == "127.0.0.1" {
+            return hostname
+        }
+        return "\(hostname) · \(host)"
+    }
+
+    private var headerStatus: String {
+        if !server.systems.isEmpty {
+            return "\(server.onlineCount)/\(server.systems.count) online"
+        }
+        switch server.status {
+        case .notConfigured: return "not configured"
+        case .checking: return "checking"
+        case .online: return "online"
+        case .offline: return "offline"
+        case .error: return "offline"
+        }
     }
 
     private var placeholder: some View {
@@ -141,7 +179,7 @@ struct ServerPane: View {
                     Text("Server monitoring")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Theme.text)
-                    Text("Connect Beszel in Settings → Server to show CPU, RAM, disk and uptime here.")
+                    Text("Connect Beszel in Settings → Server to show CPU, RAM, disk and network here.")
                         .font(.system(size: 9.5))
                         .foregroundStyle(Theme.tertiary)
                         .lineLimit(2)
@@ -218,58 +256,5 @@ struct ServerPane: View {
                 .foregroundStyle(Theme.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var statusLabel: String {
-        switch server.status {
-        case .notConfigured: return "not configured"
-        case .checking: return "checking"
-        case .online: return "online"
-        case .offline: return "offline"
-        case .error: return "offline"
-        }
-    }
-
-    private var dotColor: Color {
-        switch server.status {
-        case .online: return Color.white
-        case .offline, .error: return Theme.tertiary
-        default: return Theme.tertiary.opacity(0.6)
-        }
-    }
-
-    private func uptimeString(_ seconds: Double) -> String {
-        let total = Int(max(seconds, 0))
-        if total >= 86_400 {
-            return "\(total / 86_400)d \((total % 86_400) / 3_600)h"
-        }
-        if total >= 3_600 {
-            return "\(total / 3_600)h \((total % 3_600) / 60)m"
-        }
-        return "\(max(1, total / 60))m"
-    }
-
-    private func memoryDetail(_ metrics: BeszelMetrics) -> String {
-        guard let used = metrics.memoryUsedBytes,
-              let total = metrics.memoryTotalBytes,
-              total > 0
-        else { return "" }
-        return "\(gigabytes(used)) / \(gigabytes(total))"
-    }
-
-    private func diskDetail(_ metrics: BeszelMetrics) -> String {
-        guard let used = metrics.diskUsedGB,
-              let total = metrics.diskTotalGB,
-              total > 0
-        else { return "" }
-        return String(format: "%.0f / %.0f GB", used, total)
-    }
-
-    private func gigabytes(_ bytes: UInt64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useGB]
-        formatter.countStyle = .memory
-        formatter.allowsNonnumericFormatting = false
-        return formatter.string(fromByteCount: Int64(bytes))
     }
 }

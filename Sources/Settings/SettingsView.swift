@@ -262,8 +262,8 @@ struct SettingsView: View {
         switch server.status {
         case .notConfigured: return "Not configured"
         case .checking: return "Checking…"
-        case .online: return "Online"
-        case .offline: return "Offline"
+        case .online: return "\(server.onlineCount)/\(server.systems.count) online"
+        case .offline: return "0/\(server.systems.count) online"
         case .error: return "Error"
         }
     }
@@ -279,7 +279,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.5.0"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.6.0"
         return "v\(short)"
     }
 

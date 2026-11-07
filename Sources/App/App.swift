@@ -71,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 print("media    \(self.nowPlaying.bridgeActive ? "helper" : (self.nowPlaying.usingFallback ? "fallback" : "starting"))")
                 print("battery  \(self.battery.percentage)%\(self.battery.charging ? " charging" : "")")
-                print("server   \(self.server.status)")
+                print("server   \(self.server.status) (\(self.server.systems.count) systems)")
                 if self.calendar.status == .fullAccess {
                     print("calendar \(self.calendar.events.count) events today")
                 } else {
@@ -197,12 +197,15 @@ struct IsletMain {
             )
             Task {
                 do {
-                    let metrics = try await BeszelClient().fetch(config: config)
-                    print("server   \(metrics.name) [\(metrics.status)]")
-                    print("cpu      \(Int(metrics.cpuPercent))%")
-                    print("ram      \(Int(metrics.memoryPercent))%")
-                    print("disk     \(Int(metrics.diskPercent))%")
-                    print("uptime   \(Int(metrics.uptimeSeconds))s")
+                    let systems = try await BeszelClient().fetch(config: config)
+                    for metrics in systems {
+                        print("server   \(metrics.name) [\(metrics.status)]")
+                        print("cpu      \(Int(metrics.cpuPercent))%")
+                        print("ram      \(Int(metrics.memoryPercent))%")
+                        print("disk     \(Int(metrics.diskPercent))%")
+                        print("net      ↓ \(Int(metrics.networkReceivedBytesPerSecond)) B/s ↑ \(Int(metrics.networkSentBytesPerSecond)) B/s \(metrics.primaryInterface)")
+                        print("uptime   \(Int(metrics.uptimeSeconds))s")
+                    }
                     exit(0)
                 } catch {
                     print("error: \(error.localizedDescription)")
