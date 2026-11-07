@@ -107,15 +107,20 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     with 0600 permissions so they survive native/universal rebuilds.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
-12. **Music accent.** `ArtworkPalette` samples a 12×12 bitmap of the cover,
-    weights saturated pixels, then clamps saturation/brightness so the hue stays
-    legible on black. It caches by `ObjectIdentifier(NSImage)`, and `MusicPane`
-    falls back to white when there is no artwork. Do not sample on every frame
-    without that cache.
+12. **Music accent + wave.** `ArtworkPalette` samples a 12×12 bitmap of the
+    cover, weights saturated pixels, then clamps saturation/brightness so the
+    hue stays legible on black. It caches by `ObjectIdentifier(NSImage)`, and
+    `MusicPane` falls back to white when there is no artwork. The pane's
+    `PlayingWaveform` is a `TimelineView` + `Canvas` sine wave; `active` freezes
+    it when paused. Do not sample artwork on every frame without that cache.
 13. **Playing menu-bar item.** `AppDelegate` observes `NowPlaying.$track` and
-    creates a waveform `NSStatusItem` only while `track.isPlaying`; pausing or
-    stopping removes it. macOS puts third-party extras on the right side of the
-    notch, so "before the notch" is not addressable through `NSStatusBar`.
+    creates an `NSStatusItem` only while `track.isPlaying`; pausing or stopping
+    removes it. Its image is a mini cover thumbnail plus a flowing waveform,
+    drawn into six `NSImage` frames (`makePlayingFrames(artwork:)`), rebuilt when
+    `track.artwork` changes and cycled by `playingTimer`. The wave uses
+    `NSColor.labelColor` so it adapts to a light or dark menu bar. macOS puts
+    third-party extras on the right side of the notch, so "before the notch" is
+    not addressable through `NSStatusBar`.
 14. **Settings are explicit-save.** `SettingsView` edits a `SettingsDraft` in
     `@State`; only the Save button (⌘S) writes `UserDefaults`. The island and
     panes use `@AppStorage`, so they update when Save lands. Revert reloads the

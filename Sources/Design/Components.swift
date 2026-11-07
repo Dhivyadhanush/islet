@@ -51,25 +51,40 @@ struct MiniSlider: View {
     }
 }
 
-/// Three tiny bars that breathe while audio is playing.
-struct EqualizerBars: View {
+/// A flowing sound wave. Used in the music pane while a track is playing;
+/// `active` freezes it into a flat line when paused.
+struct PlayingWaveform: View {
     var active: Bool = true
     var color: Color = .white
-    var count: Int = 3
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.12, paused: !active)) { context in
+        TimelineView(.animation(minimumInterval: 0.06, paused: !active)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
-            HStack(alignment: .center, spacing: 2) {
-                ForEach(0..<count, id: \.self) { index in
-                    let phase = t * 2.4 + Double(index) * 1.15
-                    let height = active ? 3 + 7 * abs(sin(phase)) : 3
-                    Capsule()
-                        .fill(color)
-                        .frame(width: 2, height: height)
+            Canvas { ctx, size in
+                let mid = size.height / 2
+                let amplitude = size.height * (active ? 0.38 : 0.10)
+                let steps = 48
+
+                var path = Path()
+                for index in 0...steps {
+                    let p = Double(index) / Double(steps)
+                    let x = size.width * p
+                    // Taper the ends so the wave reads as a single sound pulse.
+                    let envelope = sin(.pi * p)
+                    let y = mid + sin(p * .pi * 2 * 2.2 + t * 5.2) * amplitude * envelope
+                    if index == 0 {
+                        path.move(to: CGPoint(x: x, y: y))
+                    } else {
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
                 }
+
+                ctx.stroke(
+                    path,
+                    with: .color(color.opacity(active ? 1 : 0.42)),
+                    style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
+                )
             }
-            .frame(width: CGFloat(count) * 4, height: 10)
         }
     }
 }

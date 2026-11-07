@@ -19,10 +19,11 @@ disappears into the notch; hover the notch to open it.
   playback (Safari, Chrome, Brave, Arc, Firefox, Zen) appear in the island with
   artwork, title, artist, source app, scrubbable progress and transport
   controls. The progress bar, play button and artwork glow take their colour
-  from the current cover.
-- **Playing indicator in the menu bar.** While audio is playing, a small
-  waveform item appears next to the other menu-bar extras and opens the Music
-  tab; it disappears as soon as playback stops.
+  from the current cover, and a flowing sound wave shows the track is live.
+- **Playing indicator in the menu bar.** While audio is playing, a mini
+  album-art thumbnail with an animated sound wave appears next to the other
+  menu-bar extras and opens the Music tab; it disappears as soon as playback
+  stops.
 - **Network data on hover.** Today's download/upload total, a live rate and a
   seven-day chart — in the expanded card only, so the collapsed notch stays
   clean.
@@ -96,7 +97,8 @@ open /Applications/lost_Island.app
    **Save** (⌘S) to apply them, or **Revert** to discard. Nothing changes in the
    island until you save.
 8. **Menu bar item:** show/hide, settings, launch at login, quit. While music
-   plays, a second waveform item appears and opens the Music tab on click.
+   plays, a second item showing the cover thumbnail plus a live waveform
+   appears and opens the Music tab on click.
 
 Click anywhere outside the island to close it.
 

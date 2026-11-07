@@ -336,3 +336,17 @@ the menu bar that disappears when playback stops; add a Save button to Settings.
 - Snapshot uses a generated magenta/orange cover so the tint is visible in
   `docs/preview-music.png`.
 - Version 0.8.0.
+
+## Phase 13 — waveform + mini cover in the playing item (8 Nov 2026)
+
+Clarified request: the "playing" animation should be an audio waveform combined
+with a mini album-art thumbnail.
+
+- The menu-bar item now renders a rounded mini cover (18 pt, aspect-filled)
+  followed by a flowing sine wave. Six frames shift the wave phase; a 0.18 s
+  `Timer` cycles them. Frames are rebuilt when `track.artwork` changes and use
+  `NSColor.labelColor`, so the wave adapts to light/dark menu bars.
+- `MusicPane` uses `PlayingWaveform` (TimelineView + Canvas) in the artwork
+  accent colour; it flattens when paused.
+- Replaced the temporary `EqualizerBars` with `PlayingWaveform`.
+- Version 0.8.1.
