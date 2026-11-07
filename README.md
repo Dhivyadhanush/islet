@@ -77,7 +77,9 @@ open /Applications/lost_Island.app
 2. **Click a tab.** The pane hangs below the notch. The pin keeps it open; the
    gear opens Settings.
 3. **Choose Server metrics.** Settings → **Server metrics**: tick CPU, RAM,
-   Disk and Network. Only the checked metrics appear in the Server tab.
+   Disk and Network. Only the checked metrics appear, and the remaining metrics
+   auto-justify across the full row (uncheck Network and CPU/RAM/Disk spread
+   edge-to-edge).
 4. **Choose modules.** Settings → **Modules**: enable or disable any tab.
 5. **Connect Beszel.** Settings → **Server (Beszel)**: hub URL, read-only
    email/password, optional Cloudflare Access Client ID/Secret.
@@ -213,7 +215,7 @@ Open **Settings** from the menu bar or the gear in the island.
 
 - Modules: Music, Network, Screen Time, Controls, Calendar, Server.
 - Server metrics: CPU / RAM / Disk / Network checkboxes (only checked metrics
-  show in the Server tab).
+  show; the rest auto-fill the row).
 - Behavior: expand on hover, battery in header, launch at login.
 - Motion: Calm animations.
 - Network: today's total, live rate and a reset button.

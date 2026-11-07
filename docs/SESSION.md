@@ -246,3 +246,16 @@ in the menu bar left and right of the notch; add install/using steps to GitHub.
 - Updated the README with an Installation section, a Using lost_Island section,
   the Server metrics checkboxes, and the Raspberry Pi agent steps.
 - Version 0.7.1. The Beszel secret moved to `beszel.password.v2` / `beszel.accessSecret.v2` so a rebuilt app gets its own Keychain ACL instead of reusing an item bound to an older signature.
+
+## Phase 7 — auto-justified server metrics + path Keychain ACL (7 Nov 2026)
+
+Request: when a Server metric is removed, the remaining metrics should align and
+fill the width.
+
+- `ServerPane` now puts flexible `Spacer`s between the checked metrics, so
+  CPU/RAM/Disk/Network fill the row; unchecking Network leaves CPU/RAM/Disk
+  justified edge-to-edge. All unchecked leaves only the name/status line.
+- Keychain items moved to v3 accounts (`beszel.password.v3` /
+  `beszel.accessSecret.v3`) with a `SecAccess` trusted app path, so the Beszel
+  credential survives rebuilds at `/Applications/lost_Island.app`.
+- Version 0.7.2.

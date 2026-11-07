@@ -95,14 +95,15 @@ struct ServerPane: View {
 
             let items = metricItems(system)
             if !items.isEmpty {
-                HStack(spacing: 5) {
+                HStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         metric(item.0, item.1)
                         if index < items.count - 1 {
-                            separator
+                            Spacer(minLength: 10)
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.vertical, 2)
@@ -136,12 +137,6 @@ struct ServerPane: View {
                 .foregroundStyle(Theme.text.opacity(0.9))
                 .lineLimit(1)
         }
-    }
-
-    private var separator: some View {
-        Text("·")
-            .font(.system(size: 8))
-            .foregroundStyle(Theme.tertiary.opacity(0.5))
     }
 
     private func networkText(_ system: BeszelMetrics) -> String {

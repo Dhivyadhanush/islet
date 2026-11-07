@@ -97,7 +97,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     the per-system `TOKEN` from the `fingerprints` collection. Server metric
     visibility is controlled by `Defaults.serverCPU/RAM/Disk/Network` and the
     Settings → Server metrics checkboxes; `ServerPane` reads them via
-    `@AppStorage`.
+    `@AppStorage`. The row uses flexible spacers, so removing a metric spreads
+    the remaining ones across the full width. Keychain items use a path-based
+    `SecAccess` with v3 accounts so the Beszel secret survives rebuilds at the
+    same app path.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 
