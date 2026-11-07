@@ -5,6 +5,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let state = IslandState()
     private let nowPlaying = NowPlaying()
+    private let network = NetworkMonitor()
     private let screenTime = ScreenTimeService()
     private let controls = SystemControls()
     private let calendar = CalendarService()
@@ -26,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         settingsController = SettingsWindowController(
             calendar: calendar,
+            network: network,
             screenTime: screenTime,
             server: server,
             nowPlaying: nowPlaying
@@ -33,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller = IslandController(
             state: state,
             nowPlaying: nowPlaying,
+            network: network,
             screenTime: screenTime,
             controls: controls,
             calendar: calendar,
@@ -46,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         nowPlaying.start()
+        network.start()
         screenTime.start()
         controls.start()
         calendar.start()
@@ -55,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isDiagnose {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                 guard let self else { exit(1) }
+                print("network  \(ByteFormat.bytes(self.network.todayTotal)) today, \(ByteFormat.rate(self.network.rate))")
                 print("screentime \(ScreenTimeFormat.duration(self.screenTime.todaySeconds)) today (local)")
                 print("volume   \(Int((self.controls.volume * 100).rounded()))%\(self.controls.muted ? " muted" : "")")
                 print("display  \(Int((self.controls.brightness * 100).rounded()))%")
@@ -72,6 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     print("calendar access not granted")
                 }
                 self.screenTime.flush()
+                self.network.flush()
                 self.nowPlaying.stop()
                 exit(0)
             }
@@ -80,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         screenTime.flush()
+        network.flush()
         nowPlaying.stop()
     }
 
@@ -88,9 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            let image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "Islet")
-            image?.isTemplate = true
-            button.image = image
+            button.image = BrandMark.statusImage()
         }
 
         let menu = NSMenu()
@@ -115,7 +120,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
-        let quit = NSMenuItem(title: "Quit Islet", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit lost_Island", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
 
@@ -156,7 +161,7 @@ struct IsletMain {
     static func main() {
         if CommandLine.arguments.contains("--version") {
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
-            print("Islet \(version)")
+            print("lost_Island \(version)")
             exit(0)
         }
 

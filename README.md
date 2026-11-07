@@ -1,12 +1,16 @@
-# Islet
+<p align="center">
+  <img src="docs/logo.gif" width="220" alt="lost_Island">
+</p>
 
-A minimal, native dynamic island for the MacBook notch. Music, Screen Time,
-system controls, calendar and a server slot — built with SwiftUI and AppKit,
-with no Electron, no web views and no analytics. When idle it disappears into
-the notch; hover the notch to open it.
+<h1 align="center">lost_Island</h1>
+
+A minimal, native dynamic island for the MacBook notch. Music, network data,
+Screen Time, system controls, calendar and a server slot — built with SwiftUI
+and AppKit, with no Electron, no web views and no analytics. When idle it
+disappears into the notch; hover the notch to open it.
 
 <p align="center">
-  <img src="docs/preview-music.png" width="700" alt="Islet music player">
+  <img src="docs/preview-music.png" width="700" alt="lost_Island music player">
 </p>
 
 ## What it does
@@ -15,8 +19,11 @@ the notch; hover the notch to open it.
   playback (Safari, Chrome, Brave, Arc, Firefox, Zen) appear in the island with
   artwork, title, artist, source app, scrubbable progress and transport
   controls.
+- **Network data on hover.** Today's download/upload total, a live rate and a
+  seven-day chart — in the expanded card only, so the collapsed notch stays
+  clean.
 - **Screen Time.** Today's frontmost-app time, a stacked app breakdown, top
-  apps and a local estimate that starts the moment Islet is running.
+  apps and a local estimate that starts the moment lost_Island is running.
 - **Volume and brightness.** Thin, fast sliders backed by CoreAudio and
   DisplayServices. Mute with one click.
 - **Calendar.** Today's events, an ongoing-event highlight, and a **Join**
@@ -31,11 +38,14 @@ the notch; hover the notch to open it.
   extends into the menu bar.
 
 <p align="center">
+  <img src="docs/preview-network.png" width="340" alt="Network data">
   <img src="docs/preview-screentime.png" width="340" alt="Screen Time">
-  <img src="docs/preview-controls.png" width="340" alt="Controls">
 </p>
 <p align="center">
+  <img src="docs/preview-controls.png" width="340" alt="Controls">
   <img src="docs/preview-calendar.png" width="340" alt="Calendar">
+</p>
+<p align="center">
   <img src="docs/preview-server.png" width="340" alt="Server placeholder">
 </p>
 
@@ -44,46 +54,46 @@ the notch; hover the notch to open it.
 ```bash
 brew tap dhivyadhanush/islet
 brew trust dhivyadhanush/islet
-brew install --cask islet
+brew install --cask lost-island
 ```
 
-On the first launch, right-click **Islet** in Applications and choose **Open**.
-The app is ad-hoc signed, so macOS will not accept a double-click until you
-approve it once. If macOS still blocks it, run:
+On the first launch, right-click **lost_Island** in Applications and choose
+**Open**. The app is ad-hoc signed, so macOS will not accept a double-click
+until you approve it once. If macOS still blocks it, run:
 
 ```bash
-sudo xattr -dr com.apple.quarantine /Applications/Islet.app
-open /Applications/Islet.app
+sudo xattr -dr com.apple.quarantine /Applications/lost_Island.app
+open /Applications/lost_Island.app
 ```
 
-Islet lives in the menu bar. Hover the notch itself (the collapsed island is
-the notch silhouette) or click just below it to open the card; click anywhere
+lost_Island lives in the menu bar. Hover the notch itself (the collapsed island
+is the notch silhouette) or click just below it to open the card; click anywhere
 outside to close it. The menu bar item has settings, launch at login and quit.
 
 ## Browser media
 
 macOS 15.4 stopped returning now-playing data to ordinary apps through the old
-MediaRemote C API. Islet ships a small local helper (`IsletMedia.dylib`, loaded
-by the Apple-signed `/usr/bin/perl`) that reads the system's now-playing
+MediaRemote C API. lost_Island ships a small local helper (`IsletMedia.dylib`,
+loaded by the Apple-signed `/usr/bin/perl`) that reads the system's now-playing
 dictionary and streams it to the app. That is why browser playback now shows up.
 
 - No network access, no analytics, no automation permission in the normal path.
 - If a site does not publish Media Session metadata, macOS Control Center will
-  not show it either, and Islet cannot invent it. Normal audio/video on Safari,
+  not show it either, and lost_Island cannot invent it. Normal audio/video on Safari,
   Chrome, Brave, Arc and Firefox does publish it.
-- If you ever see **Media → Fallback** in Settings, Islet could not start the
+- If you ever see **Media → Fallback** in Settings, lost_Island could not start the
   helper and is using the older in-process API.
 
 ## Build from source
 
 Requirements: macOS 14+, Xcode or Command Line Tools, and a Mac with a notch
-for the full effect (on other displays Islet becomes a floating pill).
+for the full effect (on other displays lost_Island becomes a floating pill).
 
 ```bash
 git clone https://github.com/dhivyadhanush/islet.git
 cd islet
 ./build.sh
-open build/Islet.app
+open build/lost_Island.app
 ```
 
 Universal binary:
@@ -95,8 +105,8 @@ ARCHS="arm64 x86_64" ./build.sh
 Useful diagnostics:
 
 ```bash
-./build/Islet.app/Contents/MacOS/Islet --diagnose
-./build/Islet.app/Contents/MacOS/Islet --snapshot build/snapshots
+./build/lost_Island.app/Contents/MacOS/lost_Island --diagnose
+./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
 ```
 
 `--snapshot` renders the island offscreen to PNGs, which is how the images above
@@ -107,21 +117,23 @@ were produced.
 | Feature | Permission |
 | --- | --- |
 | Music / browser media | None (system now-playing service) |
+| Network | None (kernel interface counters) |
 | Screen Time | None (local frontmost-app tracker) |
 | Volume | None (CoreAudio) |
 | Brightness | None (DisplayServices, built-in display) |
 | Calendar | Calendar access, requested when you tap **Connect** |
 
-Islet is not sandboxed because brightness and the media helper need system
-frameworks. It does not send data anywhere.
+lost_Island is not sandboxed because brightness and the media helper need
+system frameworks. It does not send data anywhere.
 
 ## Configuration
 
 Open **Settings** from the menu bar or the gear in the island.
 
-- Modules: Music, Screen Time, Controls, Calendar, Server.
+- Modules: Music, Network, Screen Time, Controls, Calendar, Server.
 - Behavior: expand on hover, battery in header, launch at login.
 - Motion: Calm animations.
+- Network: today's total, live rate and a reset button.
 - Screen Time: today's total and a reset button.
 - Server: integration status (placeholder for now).
 - Media: helper status.
@@ -131,8 +143,8 @@ Open **Settings** from the menu bar or the gear in the island.
 
 - **Screen Time is a local estimate.** macOS does not expose system Screen Time
   totals to third-party apps without Full Disk Access or a DeviceActivity report
-  extension. Islet tracks the frontmost app while it runs and excludes idle and
-  sleep time; it does not include usage before Islet launched.
+  extension. lost_Island tracks the frontmost app while it runs and excludes idle and
+  sleep time; it does not include usage before lost_Island launched.
 - **Server status is a placeholder.** The pane and status enum are ready; the
   actual endpoint/command integration is the next step.
 - Brightness applies to the built-in display. External displays are left alone.
@@ -147,13 +159,14 @@ SwiftUI island (NSPanel, .statusBar, non-activating)
 ├── collapsed          the notch silhouette (square top, 12 pt bottom radius)
 ├── ExpandedView       sliding tabs + battery + pin + settings
 │   ├── MusicPane      MediaRemote helper + seek + source badge
+│   ├── NetworkPane    daily totals, live rate and 7-day chart
 │   ├── ScreenTimePane local frontmost-app tracker + app breakdown
 │   ├── ControlsPane   CoreAudio volume + DisplayServices brightness
 │   ├── CalendarPane   EventKit + meeting-link Join
 │   └── ServerPane     placeholder for the server integration
-└── Services           NowPlaying, ScreenTimeService, SystemControls,
-                       CalendarService, BatteryMonitor, ServerStatusService,
-                       MediaBridge
+└── Services           NowPlaying, NetworkMonitor, ScreenTimeService,
+                       SystemControls, CalendarService, BatteryMonitor,
+                       ServerStatusService, MediaBridge
 ```
 
 The collapsed window is exactly the notch plus a 10 pt transparent hover margin.

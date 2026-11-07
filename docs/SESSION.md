@@ -141,3 +141,34 @@ Next:
 - Optionally read system Screen Time with Full Disk Access, or ship a
   DeviceActivity report extension.
 - Add a per-app detail view and a seven-day Screen Time history.
+
+## Phase 3 — lost_Island rebrand, network back on hover, solo animated logo (7 Nov 2026)
+
+Request: keep the network data usage in the hover card, rename the app to
+lost_Island, and make the logo a solo animated island.
+
+Changes:
+
+- Restored the Network module (`NetworkMonitor`, `NetworkPane`) and added it back
+  to the expanded tabs and Settings. The collapsed island remains the notch
+  silhouette; the data usage is only visible when the card is open.
+- Renamed the app bundle, executable, display name, menu items, Settings title
+  and About text to **lost_Island**. The bundle id remains `dev.dhanuz.islet`
+  so preferences, network history, Screen Time history and TCC survive.
+- New solo-island brand art: a white island with a black notch and animated
+  equalizer bars, no tile/background. The app icon is a transparent solo island;
+  `docs/logo.gif` is an animated version; Settings > About uses an animated
+  SwiftUI mark; the menu bar uses a template island silhouette.
+- Tabs: Music, Network, Screen Time, Controls, Calendar, Server.
+- Version 0.4.0. Cask renamed to `lost-island`; the tap stays
+  `dhivyadhanush/islet`.
+
+Current state:
+
+- App bundle: `lost_Island.app`; executable `lost_Island`; version 0.4.0.
+- Collapsed window on this Mac: 228×48 including the hover margin; island
+  208×37.5 (the notch).
+- Network data usage is back in the hover card, not in the collapsed notch.
+- Screen Time remains a local frontmost-app estimate.
+- Server status remains a placeholder; `ServerStatusService.check()` is the
+  integration point.

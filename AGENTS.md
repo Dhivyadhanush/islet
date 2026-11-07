@@ -7,12 +7,12 @@ Notes for anyone (human or agent) changing Islet.
 ```bash
 ./build.sh                                  # native arch
 ARCHS="arm64 x86_64" ./build.sh             # universal
-./build/Islet.app/Contents/MacOS/Islet --diagnose
-./build/Islet.app/Contents/MacOS/Islet --snapshot build/snapshots
+./build/lost_Island.app/Contents/MacOS/lost_Island --diagnose
+./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
 ```
 
-- `--diagnose` starts the services, waits 3 s, prints screen time/volume/
-  brightness/media/battery/server/calendar state, then exits. Use it to verify
+- `--diagnose` starts the services, waits 3 s, prints network/screen time/
+  volume/brightness/media/battery/server/calendar state, then exits. Use it to verify
   the media helper.
 - `--snapshot` renders every island state offscreen with sample data. It needs no
   Screen Recording permission. The PNGs in `docs/` come from this.
@@ -32,8 +32,8 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/Island/IslandRootView.swift` | Notch silhouette, clip, transitions, dark scheme |
 | `Sources/Island/IslandShape.swift` | Animatable top/bottom corner radii |
 | `Sources/Island/ExpandedView.swift` | Tabs, battery, pin, gear |
-| `Sources/Island/Panes/*` | Music, screen time, controls, calendar, server |
-| `Sources/Services/*` | Media, screen time, CoreAudio, EventKit, battery, server |
+| `Sources/Island/Panes/*` | Music, network, screen time, controls, calendar, server |
+| `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, server |
 | `Sources/Media/IsletMedia.m` | Objective-C dylib loaded by perl |
 | `Sources/Media/islet-media.pl` | Loader/stream entry point |
 | `Sources/Settings/*` | Settings window |
@@ -86,10 +86,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 
 1. Bump `VERSION` in `build.sh` (and the Settings fallback version if needed).
 2. `ARCHS="arm64 x86_64" ./build.sh`
-3. `./build/Islet.app/Contents/MacOS/Islet --snapshot build/snapshots` and update
+3. `./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots` and update
    `docs/preview-*.png`.
 4. Build the DMG:
-   `hdiutil create -volname "Islet" -srcfolder build/dmg -ov -format UDZO build/Islet-$VERSION.dmg`
-5. `gh release create v$VERSION build/Islet-$VERSION.dmg`
-6. Update `Casks/islet.rb` in the `homebrew-islet` tap with the new version and
-   `shasum -a 256` of the DMG.
+   `hdiutil create -volname "lost_Island" -srcfolder build/dmg -ov -format UDZO build/lost_Island-$VERSION.dmg`
+5. `gh release create v$VERSION build/lost_Island-$VERSION.dmg`
+6. Update `Casks/lost-island.rb` in the `homebrew-islet` tap with the new version
+   and `shasum -a 256` of the DMG.

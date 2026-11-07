@@ -18,6 +18,7 @@ enum Snapshot {
         )
 
         let nowPlaying = NowPlaying()
+        let network = NetworkMonitor()
         let screenTime = ScreenTimeService()
         let controls = SystemControls()
         let calendar = CalendarService()
@@ -27,6 +28,13 @@ enum Snapshot {
         battery.previewSeed(percentage: 82, charging: true)
         controls.previewSeed(volume: 0.62, brightness: 0.78)
         calendar.previewSeed(status: .fullAccess, events: sampleEvents())
+        let history = sampleHistory()
+        network.previewSeed(
+            down: history.last?.down ?? 0,
+            up: history.last?.up ?? 0,
+            rate: 2_400_000,
+            history: history
+        )
         screenTime.previewSeed(
             total: 2 * 3600 + 22 * 60,
             apps: sampleApps(),
@@ -50,6 +58,7 @@ enum Snapshot {
             IslandRootView()
                 .environmentObject(state)
                 .environmentObject(nowPlaying)
+                .environmentObject(network)
                 .environmentObject(screenTime)
                 .environmentObject(controls)
                 .environmentObject(calendar)
@@ -68,17 +77,20 @@ enum Snapshot {
         state.tab = .music
         render(root, size: expanded, name: "01-expanded-music", directory: directoryURL)
 
+        state.tab = .network
+        render(root, size: expanded, name: "02-expanded-network", directory: directoryURL)
+
         state.tab = .screenTime
-        render(root, size: expanded, name: "02-expanded-screentime", directory: directoryURL)
+        render(root, size: expanded, name: "03-expanded-screentime", directory: directoryURL)
 
         state.tab = .controls
-        render(root, size: expanded, name: "03-expanded-controls", directory: directoryURL)
+        render(root, size: expanded, name: "04-expanded-controls", directory: directoryURL)
 
         state.tab = .calendar
-        render(root, size: expanded, name: "04-expanded-calendar", directory: directoryURL)
+        render(root, size: expanded, name: "05-expanded-calendar", directory: directoryURL)
 
         state.tab = .server
-        render(root, size: expanded, name: "05-expanded-server", directory: directoryURL)
+        render(root, size: expanded, name: "06-expanded-server", directory: directoryURL)
 
         print("Snapshots written to \(directoryURL.path)")
     }
@@ -96,6 +108,29 @@ enum Snapshot {
         let url = directory.appendingPathComponent("\(name).png")
         try? data.write(to: url)
         print("wrote \(name).png")
+    }
+
+    private static func sampleHistory() -> [NetworkMonitor.DayUsage] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let values: [(UInt64, UInt64)] = [
+            (2_100_000_000, 240_000_000),
+            (800_000_000, 90_000_000),
+            (3_400_000_000, 410_000_000),
+            (1_200_000_000, 130_000_000),
+            (2_800_000_000, 300_000_000),
+            (900_000_000, 110_000_000),
+            (1_100_000_000, 120_000_000),
+        ]
+        return (0..<7).compactMap { index in
+            guard let date = calendar.date(byAdding: .day, value: index - 6, to: today) else { return nil }
+            return NetworkMonitor.DayUsage(
+                key: "sample-\(index)",
+                date: date,
+                down: values[index].0,
+                up: values[index].1
+            )
+        }
     }
 
     private static func sampleApps() -> [ScreenTimeService.AppUsage] {
@@ -161,7 +196,7 @@ enum Snapshot {
             ),
             CalendarService.EventItem(
                 id: "sample-3",
-                title: "Ship Islet",
+                title: "Ship lost_Island",
                 start: offset(240),
                 end: offset(285),
                 isAllDay: false,

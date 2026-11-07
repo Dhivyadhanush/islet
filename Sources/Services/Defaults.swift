@@ -4,6 +4,7 @@ import Foundation
 /// controller cannot drift apart.
 enum Defaults {
     static let showMusic = "islet.showMusic"
+    static let showNetwork = "islet.showNetwork"
     static let showScreenTime = "islet.showScreenTime"
     static let showControls = "islet.showControls"
     static let showCalendar = "islet.showCalendar"
@@ -14,6 +15,7 @@ enum Defaults {
 
     static let registered: [String: Any] = [
         showMusic: true,
+        showNetwork: true,
         showScreenTime: true,
         showControls: true,
         showCalendar: true,
@@ -25,6 +27,28 @@ enum Defaults {
 
     static func register() {
         UserDefaults.standard.register(defaults: registered)
+    }
+}
+
+enum ByteFormat {
+    private static func formatter(_ units: ByteCountFormatter.Units) -> ByteCountFormatter {
+        let f = ByteCountFormatter()
+        f.allowedUnits = units
+        f.countStyle = .file
+        f.allowsNonnumericFormatting = false
+        f.isAdaptive = true
+        return f
+    }
+
+    static func bytes(_ value: UInt64) -> String {
+        if value == 0 { return "0 KB" }
+        return formatter([.useKB, .useMB, .useGB]).string(fromByteCount: Int64(value))
+    }
+
+    static func rate(_ value: Double) -> String {
+        guard value >= 1 else { return "0 KB/s" }
+        let text = formatter([.useKB, .useMB, .useGB]).string(fromByteCount: Int64(value))
+        return text + "/s"
     }
 }
 

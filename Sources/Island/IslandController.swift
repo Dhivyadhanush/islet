@@ -7,6 +7,7 @@ final class IslandController {
     private let state: IslandState
     private let panel: IslandPanel
     private let nowPlaying: NowPlaying
+    private let network: NetworkMonitor
     private let screenTime: ScreenTimeService
     private let controls: SystemControls
     private let calendar: CalendarService
@@ -22,6 +23,7 @@ final class IslandController {
     init(
         state: IslandState,
         nowPlaying: NowPlaying,
+        network: NetworkMonitor,
         screenTime: ScreenTimeService,
         controls: SystemControls,
         calendar: CalendarService,
@@ -30,6 +32,7 @@ final class IslandController {
     ) {
         self.state = state
         self.nowPlaying = nowPlaying
+        self.network = network
         self.screenTime = screenTime
         self.controls = controls
         self.calendar = calendar
@@ -44,6 +47,7 @@ final class IslandController {
             IslandRootView()
                 .environmentObject(state)
                 .environmentObject(nowPlaying)
+                .environmentObject(network)
                 .environmentObject(screenTime)
                 .environmentObject(controls)
                 .environmentObject(calendar)

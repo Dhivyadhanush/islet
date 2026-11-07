@@ -3,11 +3,13 @@ import AppKit
 
 struct SettingsView: View {
     @EnvironmentObject private var calendar: CalendarService
+    @EnvironmentObject private var network: NetworkMonitor
     @EnvironmentObject private var screenTime: ScreenTimeService
     @EnvironmentObject private var server: ServerStatusService
     @EnvironmentObject private var nowPlaying: NowPlaying
 
     @AppStorage(Defaults.showMusic) private var showMusic = true
+    @AppStorage(Defaults.showNetwork) private var showNetwork = true
     @AppStorage(Defaults.showScreenTime) private var showScreenTime = true
     @AppStorage(Defaults.showControls) private var showControls = true
     @AppStorage(Defaults.showCalendar) private var showCalendar = true
@@ -27,6 +29,12 @@ struct SettingsView: View {
                     title: "Music",
                     subtitle: "Now playing, artwork and transport controls",
                     isOn: $showMusic
+                )
+                moduleRow(
+                    icon: "arrow.up.arrow.down",
+                    title: "Network",
+                    subtitle: "Today's usage, live rate and a seven-day chart",
+                    isOn: $showNetwork
                 )
                 moduleRow(
                     icon: "hourglass",
@@ -78,6 +86,19 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Network") {
+                HStack {
+                    Text("Today")
+                    Spacer()
+                    Text(ByteFormat.bytes(network.todayTotal))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Button("Reset network history") {
+                    network.reset()
+                }
+            }
+
             Section("Screen Time") {
                 HStack {
                     Text("Today")
@@ -89,7 +110,7 @@ struct SettingsView: View {
                 Button("Reset screen time data") {
                     screenTime.reset()
                 }
-                Text("Tracked locally while Islet runs. macOS does not expose system Screen Time to third-party apps without Full Disk Access, so this is a local estimate, not Apple's number.")
+                Text("Tracked locally while lost_Island runs. macOS does not expose system Screen Time to third-party apps without Full Disk Access, so this is a local estimate, not Apple's number.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -101,7 +122,7 @@ struct SettingsView: View {
                     Text(serverStatus)
                         .foregroundStyle(.secondary)
                 }
-                Text("This tab is a placeholder. Tell Islet how to reach your server (URL, command or API) and it will show uptime, latency and services here.")
+                Text("This tab is a placeholder. Tell lost_Island how to reach your server (URL, command or API) and it will show uptime, latency and services here.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -113,7 +134,7 @@ struct SettingsView: View {
                     Text(mediaStatus)
                         .foregroundStyle(.secondary)
                 }
-                Text("Safari, Chrome, Brave, Arc and Firefox report through the system now-playing service. Islet reads it locally; nothing is sent anywhere.")
+                Text("Safari, Chrome, Brave, Arc and Firefox report through the system now-playing service. lost_Island reads it locally; nothing is sent anywhere.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -130,14 +151,20 @@ struct SettingsView: View {
                         Button("Open Settings") { openCalendarSettings() }
                     }
                 }
-                Text("Music and browsers need no permission. If macOS asks for Automation, allow it so Islet can read the current track.")
+                Text("Music and browsers need no permission. If macOS asks for Automation, allow it so lost_Island can read the current track.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
                 HStack {
-                    Text("Islet")
+                    Spacer()
+                    SoloIslandMark(width: 150)
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                HStack {
+                    Text("lost_Island")
                     Spacer()
                     Text(version)
                         .foregroundStyle(.secondary)

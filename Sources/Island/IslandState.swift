@@ -3,6 +3,7 @@ import AppKit
 
 enum IslandTab: String, CaseIterable, Identifiable {
     case music
+    case network
     case screenTime
     case controls
     case calendar
@@ -13,6 +14,7 @@ enum IslandTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .music: return "Music"
+        case .network: return "Network"
         case .screenTime: return "Screen Time"
         case .controls: return "Controls"
         case .calendar: return "Calendar"
@@ -23,6 +25,7 @@ enum IslandTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .music: return "music.note"
+        case .network: return "arrow.up.arrow.down"
         case .screenTime: return "hourglass"
         case .controls: return "slider.horizontal.3"
         case .calendar: return "calendar"

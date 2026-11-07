@@ -47,7 +47,7 @@ struct ServerPane: View {
                     Text("Waiting for integration")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Theme.text)
-                    Text("Tell Islet how to reach your server and this tab will show uptime, latency and services.")
+                    Text("Tell lost_Island how to reach your server and this tab will show uptime, latency and services.")
                         .font(.system(size: 9.5))
                         .foregroundStyle(Theme.tertiary)
                         .lineLimit(2)

@@ -30,7 +30,7 @@ struct ScreenTimePane: View {
 
                 Spacer(minLength: 0)
 
-                Text("Tracked by Islet while it runs")
+                Text("Tracked by lost_Island while it runs")
                     .font(.system(size: 8.5))
                     .foregroundStyle(Theme.tertiary.opacity(0.8))
             } else {
@@ -92,7 +92,7 @@ struct ScreenTimePane: View {
             Text("No activity yet")
                 .font(.system(size: 11.5, weight: .medium))
                 .foregroundStyle(Theme.text)
-            Text("Islet tracks the frontmost app locally while it runs.")
+            Text("lost_Island tracks the frontmost app locally while it runs.")
                 .font(.system(size: 9.5))
                 .foregroundStyle(Theme.tertiary)
                 .multilineTextAlignment(.center)

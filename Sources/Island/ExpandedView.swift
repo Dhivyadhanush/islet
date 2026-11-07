@@ -6,6 +6,7 @@ struct ExpandedView: View {
     @EnvironmentObject private var battery: BatteryMonitor
 
     @AppStorage(Defaults.showMusic) private var showMusic = true
+    @AppStorage(Defaults.showNetwork) private var showNetwork = true
     @AppStorage(Defaults.showScreenTime) private var showScreenTime = true
     @AppStorage(Defaults.showControls) private var showControls = true
     @AppStorage(Defaults.showCalendar) private var showCalendar = true
@@ -29,6 +30,7 @@ struct ExpandedView: View {
     private var tabs: [IslandTab] {
         var result: [IslandTab] = []
         if showMusic { result.append(.music) }
+        if showNetwork { result.append(.network) }
         if showScreenTime { result.append(.screenTime) }
         if showControls { result.append(.controls) }
         if showCalendar { result.append(.calendar) }
@@ -89,6 +91,7 @@ struct ExpandedView: View {
             Group {
                 switch state.tab {
                 case .music: MusicPane()
+                case .network: NetworkPane()
                 case .screenTime: ScreenTimePane()
                 case .controls: ControlsPane()
                 case .calendar: CalendarPane()
