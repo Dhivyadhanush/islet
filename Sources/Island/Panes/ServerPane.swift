@@ -4,6 +4,11 @@ struct ServerPane: View {
     @EnvironmentObject private var server: ServerStatusService
     @EnvironmentObject private var state: IslandState
 
+    @AppStorage(Defaults.serverCPU) private var showCPU = true
+    @AppStorage(Defaults.serverRAM) private var showRAM = true
+    @AppStorage(Defaults.serverDisk) private var showDisk = true
+    @AppStorage(Defaults.serverNetwork) private var showNetwork = true
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 5) {
@@ -88,17 +93,36 @@ struct ServerPane: View {
                     .lineLimit(1)
             }
 
-            HStack(spacing: 5) {
-                metric("CPU", "\(Int(system.cpuPercent.rounded()))%")
-                separator
-                metric("RAM", "\(Int(system.memoryPercent.rounded()))%")
-                separator
-                metric("DISK", "\(Int(system.diskPercent.rounded()))%")
-                separator
-                metric("NET", networkText(system))
+            let items = metricItems(system)
+            if !items.isEmpty {
+                HStack(spacing: 5) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        metric(item.0, item.1)
+                        if index < items.count - 1 {
+                            separator
+                        }
+                    }
+                }
             }
         }
         .padding(.vertical, 2)
+    }
+
+    private func metricItems(_ system: BeszelMetrics) -> [(String, String)] {
+        var items: [(String, String)] = []
+        if showCPU {
+            items.append(("CPU", "\(Int(system.cpuPercent.rounded()))%"))
+        }
+        if showRAM {
+            items.append(("RAM", "\(Int(system.memoryPercent.rounded()))%"))
+        }
+        if showDisk {
+            items.append(("DISK", "\(Int(system.diskPercent.rounded()))%"))
+        }
+        if showNetwork {
+            items.append(("NET", networkText(system)))
+        }
+        return items
     }
 
     private func metric(_ label: String, _ value: String) -> some View {

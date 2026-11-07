@@ -12,6 +12,10 @@ enum Defaults {
     static let hoverExpand = "islet.hoverExpand"
     static let calmMotion = "islet.calmMotion"
     static let showBattery = "islet.showBattery"
+    static let serverCPU = "islet.server.cpu"
+    static let serverRAM = "islet.server.ram"
+    static let serverDisk = "islet.server.disk"
+    static let serverNetwork = "islet.server.network"
 
     static let registered: [String: Any] = [
         showMusic: true,
@@ -23,6 +27,10 @@ enum Defaults {
         hoverExpand: true,
         calmMotion: false,
         showBattery: true,
+        serverCPU: true,
+        serverRAM: true,
+        serverDisk: true,
+        serverNetwork: true,
     ]
 
     static func register() {

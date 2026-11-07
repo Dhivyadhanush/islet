@@ -230,3 +230,19 @@ and add network details.
 - Network details use `b` [sent, received bytes/s] and `ni` interface counters;
   the active interface is chosen and shown as e.g. `wlan0 ↓ 3.1 KB/s ↑ 3.6 KB/s`.
 - Version 0.6.0.
+
+## Phase 6 — menu-bar tab wings + server metric checkboxes (7 Nov 2026)
+
+Request: show only checked CPU/RAM/Disk/NET in the Server tab; put the tab strip
+in the menu bar left and right of the notch; add install/using steps to GitHub.
+
+- Expanded card width is now 620 pt. The tab strip is split 3/3 into the
+  menu-bar wings: Music/Network/Screen Time left of the notch; Controls/Calendar/
+  Server right; battery, pin and gear at the far right. The pane hangs below the
+  notch.
+- Added Settings → Server metrics checkboxes for CPU, RAM, Disk and Network.
+  `ServerPane` reads `Defaults.serverCPU/RAM/Disk/Network` via `@AppStorage` and
+  renders only checked items.
+- Updated the README with an Installation section, a Using lost_Island section,
+  the Server metrics checkboxes, and the Raspberry Pi agent steps.
+- Version 0.7.1. The Beszel secret moved to `beszel.password.v2` / `beszel.accessSecret.v2` so a rebuilt app gets its own Keychain ACL instead of reusing an item bound to an older signature.

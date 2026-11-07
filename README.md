@@ -50,7 +50,9 @@ disappears into the notch; hover the notch to open it.
   <img src="docs/preview-server.png" width="340" alt="Server status with Beszel">
 </p>
 
-## Install with Homebrew
+## Installation
+
+### Homebrew
 
 ```bash
 brew tap dhivyadhanush/islet
@@ -67,9 +69,23 @@ sudo xattr -dr com.apple.quarantine /Applications/lost_Island.app
 open /Applications/lost_Island.app
 ```
 
-lost_Island lives in the menu bar. Hover the notch itself (the collapsed island
-is the notch silhouette) or click just below it to open the card; click anywhere
-outside to close it. The menu bar item has settings, launch at login and quit.
+## Using lost_Island
+
+1. **Hover the notch.** The collapsed island is the notch silhouette. The tab
+   strip appears in the menu-bar wings: Music, Network and Screen Time on the
+   left of the notch; Controls, Calendar and Server on the right.
+2. **Click a tab.** The pane hangs below the notch. The pin keeps it open; the
+   gear opens Settings.
+3. **Choose Server metrics.** Settings → **Server metrics**: tick CPU, RAM,
+   Disk and Network. Only the checked metrics appear in the Server tab.
+4. **Choose modules.** Settings → **Modules**: enable or disable any tab.
+5. **Connect Beszel.** Settings → **Server (Beszel)**: hub URL, read-only
+   email/password, optional Cloudflare Access Client ID/Secret.
+6. **Tune the island.** Settings → **Behavior** (hover, battery, launch at
+   login) and **Motion** (calm animations).
+7. **Menu bar item:** show/hide, settings, launch at login, quit.
+
+Click anywhere outside the island to close it.
 
 ## Browser media
 
@@ -196,6 +212,8 @@ system frameworks. It does not send data anywhere.
 Open **Settings** from the menu bar or the gear in the island.
 
 - Modules: Music, Network, Screen Time, Controls, Calendar, Server.
+- Server metrics: CPU / RAM / Disk / Network checkboxes (only checked metrics
+  show in the Server tab).
 - Behavior: expand on hover, battery in header, launch at login.
 - Motion: Calm animations.
 - Network: today's total, live rate and a reset button.

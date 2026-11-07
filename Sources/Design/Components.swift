@@ -166,13 +166,13 @@ struct IslandTabButton: View {
                     Capsule()
                         .fill(Color.white)
                         .matchedGeometryEffect(id: "island.selectedTab", in: namespace)
-                        .frame(width: 28, height: 24)
+                        .frame(width: 26, height: 24)
                 }
                 Image(systemName: tab.icon)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(active ? Color.black : (hovering ? Theme.text : Theme.secondary))
             }
-            .frame(width: 28, height: 24)
+            .frame(width: 26, height: 24)
             .contentShape(Capsule())
         }
         .buttonStyle(PressableButtonStyle(scale: 0.92))

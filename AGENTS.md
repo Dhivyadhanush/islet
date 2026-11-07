@@ -55,13 +55,14 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    from stdout. It restarts up to five times, then falls back to the legacy API.
    `NowPlaying.stop()` terminates it on quit. Artwork is sent only when the
    content identifier changes; the app caches it.
-4. **Window geometry.** The collapsed island is exactly the notch silhouette
-   (square top, 12 pt bottom radius) so it disappears into the cutout. The panel
-   is the island size plus 10 pt on each side and below; the hover/tap handlers
-   live on that padded wrapper, so hovering just under the notch works. The
-   expanded state keeps the top flush. The margin exists so the spring overshoot
-   is not clipped. Do not add a visible border; the design is intentionally
-   borderless.
+4. **Window geometry and tab wings.** The collapsed island is exactly the notch
+   silhouette (square top, 12 pt bottom radius) so it disappears into the cutout.
+   The expanded card is 620 pt wide: the tab strip is split 3/3 into the
+   menu-bar wings left and right of the notch, with battery/pin/gear on the
+   right wing and the pane below the notch. The panel is the island size plus
+   10 pt on each side and below; the hover/tap handlers live on that padded
+   wrapper. The margin exists so the spring overshoot is not clipped. Do not add
+   a visible border; the design is intentionally borderless.
 5. **No shadow.** `panel.hasShadow = false` keeps the resize animation cheap.
    The black shape is the whole visual.
 6. **Dark mode.** The island forces `.environment(\.colorScheme, .dark)`.
@@ -83,7 +84,9 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     active `ni` interface (KB/s). Auth uses PocketBase
     (`POST /api/collections/users/auth-with-password`) and reads `systems` +
     `system_stats`. Hub URL/email/Access client ID live in UserDefaults; the
-    password and Access secret live in Keychain. Cloudflare Access service-token
+    password and Access secret live in Keychain under `beszel.password.v2` /
+    `beszel.accessSecret.v2` (the v2 suffix avoids reusing an item bound to an
+    older ad-hoc signature). Cloudflare Access service-token
     headers are supported. `--beszel-test` reads `BESZEL_URL`, `BESZEL_EMAIL`,
     `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`. The
     `NSAllowsLocalNetworking` ATS key permits local/tunnel HTTP for testing.
@@ -91,7 +94,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     app so the Keychain item is created with the app's own signature.
     The Pi runs the armv7 agent as `beszel-agent.service`, configured in
     `/etc/beszel-agent.conf` with `KEY`, `HUB_URL=http://192.168.1.22:8090` and
-    the per-system `TOKEN` from the `fingerprints` collection.
+    the per-system `TOKEN` from the `fingerprints` collection. Server metric
+    visibility is controlled by `Defaults.serverCPU/RAM/Disk/Network` and the
+    Settings → Server metrics checkboxes; `ServerPane` reads them via
+    `@AppStorage`.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 

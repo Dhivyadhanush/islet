@@ -19,7 +19,7 @@ struct IslandGeometry {
 
     var expandedSize: CGSize {
         CGSize(
-            width: min(424, screenFrame.width - 40),
+            width: min(620, screenFrame.width - 40),
             height: hasNotch ? notchHeight + 204 : 232
         )
     }

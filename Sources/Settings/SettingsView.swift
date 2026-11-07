@@ -17,6 +17,10 @@ struct SettingsView: View {
     @AppStorage(Defaults.hoverExpand) private var hoverExpand = true
     @AppStorage(Defaults.calmMotion) private var calmMotion = false
     @AppStorage(Defaults.showBattery) private var showBattery = true
+    @AppStorage(Defaults.serverCPU) private var serverCPU = true
+    @AppStorage(Defaults.serverRAM) private var serverRAM = true
+    @AppStorage(Defaults.serverDisk) private var serverDisk = true
+    @AppStorage(Defaults.serverNetwork) private var serverNetwork = true
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var loginError: String?
@@ -116,6 +120,20 @@ struct SettingsView: View {
                     screenTime.reset()
                 }
                 Text("Tracked locally while lost_Island runs. macOS does not expose system Screen Time to third-party apps without Full Disk Access, so this is a local estimate, not Apple's number.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Server metrics") {
+                Toggle("CPU", isOn: $serverCPU)
+                    .toggleStyle(.checkbox)
+                Toggle("RAM", isOn: $serverRAM)
+                    .toggleStyle(.checkbox)
+                Toggle("Disk", isOn: $serverDisk)
+                    .toggleStyle(.checkbox)
+                Toggle("Network", isOn: $serverNetwork)
+                    .toggleStyle(.checkbox)
+                Text("Only checked metrics appear in the Server tab.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -279,7 +297,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.6.0"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.7.1"
         return "v\(short)"
     }
 

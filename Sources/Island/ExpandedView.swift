@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The expanded card: a row of module tabs and one focused pane.
+/// The expanded card. The tab strip lives in the menu-bar wings on both sides
+/// of the notch; the focused pane hangs below the notch.
 struct ExpandedView: View {
     @EnvironmentObject private var state: IslandState
     @EnvironmentObject private var battery: BatteryMonitor
@@ -17,10 +18,7 @@ struct ExpandedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if state.geometry.hasNotch {
-                Color.clear.frame(height: state.geometry.notchHeight)
-            }
-            header
+            topRow
             pane
         }
         .onAppear { ensureValidTab() }
@@ -38,49 +36,87 @@ struct ExpandedView: View {
         return result
     }
 
-    private var header: some View {
-        HStack(spacing: 4) {
-            ForEach(tabs) { tab in
-                IslandTabButton(
-                    tab: tab,
-                    active: state.tab == tab,
-                    namespace: tabNamespace
+    private var splitIndex: Int { (tabs.count + 1) / 2 }
+    private var leftTabs: [IslandTab] { Array(tabs.prefix(splitIndex)) }
+    private var rightTabs: [IslandTab] { Array(tabs.dropFirst(splitIndex)) }
+
+    private var topRowHeight: CGFloat {
+        state.geometry.hasNotch ? state.geometry.notchHeight : 34
+    }
+
+    private var notchWidth: CGFloat {
+        state.geometry.hasNotch ? state.geometry.notchWidth : 0
+    }
+
+    private var wingWidth: CGFloat {
+        max((state.geometry.expandedSize.width - notchWidth) / 2, 0)
+    }
+
+    private var topRow: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 3) {
+                ForEach(leftTabs) { tab in
+                    tabButton(tab)
+                }
+            }
+            .padding(.trailing, 8)
+            .frame(width: wingWidth, alignment: .trailing)
+
+            if notchWidth > 0 {
+                Color.clear.frame(width: notchWidth)
+            }
+
+            HStack(spacing: 3) {
+                ForEach(rightTabs) { tab in
+                    tabButton(tab)
+                }
+
+                Spacer(minLength: 3)
+
+                if showBattery && battery.available {
+                    batteryBadge
+                }
+
+                IslandIconButton(
+                    systemName: state.pinned ? "pin.fill" : "pin",
+                    active: state.pinned,
+                    help: state.pinned ? "Unpin" : "Keep open"
                 ) {
-                    withAnimation(Theme.quick) {
-                        state.tab = tab
-                    }
+                    state.onTogglePin?()
+                }
+                IslandIconButton(systemName: "gearshape", help: "Settings") {
+                    state.openSettings?()
                 }
             }
+            .padding(.leading, 8)
+            .padding(.trailing, 6)
+            .frame(width: wingWidth, alignment: .leading)
+        }
+        .frame(height: topRowHeight)
+    }
 
-            Spacer(minLength: 6)
-
-            if showBattery && battery.available {
-                HStack(spacing: 3) {
-                    Image(systemName: battery.charging ? "bolt.fill" : batterySymbol)
-                        .font(.system(size: 9, weight: .semibold))
-                    Text("\(battery.percentage)%")
-                        .monospacedDigit()
-                }
-                .font(.system(size: 9, weight: .medium, design: .rounded))
-                .foregroundStyle(battery.percentage <= 20 ? Theme.text : Theme.tertiary)
-                .padding(.trailing, 2)
-                .help(battery.charging ? "Charging" : "Battery")
-            }
-
-            IslandIconButton(
-                systemName: state.pinned ? "pin.fill" : "pin",
-                active: state.pinned,
-                help: state.pinned ? "Unpin" : "Keep open"
-            ) {
-                state.onTogglePin?()
-            }
-            IslandIconButton(systemName: "gearshape", help: "Settings") {
-                state.openSettings?()
+    private func tabButton(_ tab: IslandTab) -> some View {
+        IslandTabButton(
+            tab: tab,
+            active: state.tab == tab,
+            namespace: tabNamespace
+        ) {
+            withAnimation(Theme.quick) {
+                state.tab = tab
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-        .frame(height: 38)
+    }
+
+    private var batteryBadge: some View {
+        HStack(spacing: 3) {
+            Image(systemName: battery.charging ? "bolt.fill" : batterySymbol)
+                .font(.system(size: 9, weight: .semibold))
+            Text("\(battery.percentage)%")
+                .monospacedDigit()
+        }
+        .font(.system(size: 9, weight: .medium, design: .rounded))
+        .foregroundStyle(battery.percentage <= 20 ? Theme.text : Theme.tertiary)
+        .help(battery.charging ? "Charging" : "Battery")
     }
 
     @ViewBuilder
@@ -103,6 +139,7 @@ struct ExpandedView: View {
             .animation(Theme.fade, value: state.tab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 16)
+            .padding(.top, 8)
             .padding(.bottom, 12)
         }
     }
@@ -128,6 +165,7 @@ struct ExpandedView: View {
             .buttonStyle(PressableButtonStyle())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, 8)
         .padding(.bottom, 12)
     }
 

@@ -10,6 +10,10 @@ enum Snapshot {
         let directoryURL = URL(fileURLWithPath: directory, isDirectory: true)
         try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
+        for key in [Defaults.serverCPU, Defaults.serverRAM, Defaults.serverDisk, Defaults.serverNetwork] {
+            UserDefaults.standard.set(true, forKey: key)
+        }
+
         let state = IslandState()
         state.geometry = IslandGeometry(
             screenFrame: CGRect(x: 0, y: 0, width: 1710, height: 1112),
