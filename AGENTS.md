@@ -84,6 +84,8 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     headers are supported. `--beszel-test` reads `BESZEL_URL`, `BESZEL_EMAIL`,
     `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`. The
     `NSAllowsLocalNetworking` ATS key permits local/tunnel HTTP for testing.
+    `--beszel-save` writes the same config headlessly; run it from the installed
+    app so the Keychain item is created with the app's own signature.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 

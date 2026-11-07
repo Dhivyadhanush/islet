@@ -110,6 +110,27 @@ final class ServerStatusService: ObservableObject {
         accessClientID: String,
         accessClientSecret: String
     ) {
+        Self.saveConfig(
+            baseURL: baseURL,
+            email: email,
+            password: password,
+            accessClientID: accessClientID,
+            accessClientSecret: accessClientSecret
+        )
+        metrics = nil
+        lastError = nil
+        refresh()
+    }
+
+    /// Writes the configuration without touching the network. Used by the
+    /// Settings window and by the headless `--beszel-save` helper.
+    static func saveConfig(
+        baseURL: String,
+        email: String,
+        password: String,
+        accessClientID: String,
+        accessClientSecret: String
+    ) {
         let defaults = UserDefaults.standard
         defaults.set(baseURL.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.url)
         defaults.set(email.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.email)
@@ -121,10 +142,6 @@ final class ServerStatusService: ObservableObject {
         if !accessClientSecret.isEmpty {
             Keychain.set(accessClientSecret, account: Keys.accessSecretAccount)
         }
-
-        metrics = nil
-        lastError = nil
-        refresh()
     }
 
     func clear() {

@@ -169,6 +169,23 @@ struct IsletMain {
 
         Defaults.register()
 
+        if CommandLine.arguments.contains("--beszel-save") {
+            let args = CommandLine.arguments
+            func value(_ name: String) -> String {
+                guard let index = args.firstIndex(of: name), args.count > index + 1 else { return "" }
+                return args[index + 1]
+            }
+            ServerStatusService.saveConfig(
+                baseURL: value("--beszel-url"),
+                email: value("--beszel-email"),
+                password: value("--beszel-password"),
+                accessClientID: value("--beszel-access-id"),
+                accessClientSecret: value("--beszel-access-secret")
+            )
+            print("beszel config saved")
+            exit(0)
+        }
+
         if CommandLine.arguments.contains("--beszel-test") {
             let env = ProcessInfo.processInfo.environment
             let config = BeszelConfig(

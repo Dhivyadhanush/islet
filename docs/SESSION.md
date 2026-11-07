@@ -201,3 +201,13 @@ island.
 Verified: unconfigured error path and a live auth-failure response through the
 SSH tunnel (`Beszel login failed. Failed to authenticate.`). The success path
 needs the read-only Beszel user.
+
+### Live configuration (7 Nov 2026)
+
+- The domain `https://beszel.dhanush-vijay.uk` is live and returns the Beszel UI.
+- The installed app was configured through `--beszel-save` (0.5.1 helper); the
+  hub URL and account are in UserDefaults, the password is in Keychain.
+- `--diagnose` reports `server online`; the Beszel client reports
+  `Server1 [up]`, CPU ~3%, RAM ~27%, disk ~22%, uptime ~8d 11h.
+- The account used is an admin account; a read-only Beszel user is still the
+  recommended follow-up for daily use.
