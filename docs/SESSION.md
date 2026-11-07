@@ -1,4 +1,4 @@
-# Session — Islet 0.2.0
+# Session — lost_Island
 
 **Date:** 6 November 2026
 **Goal:** build a minimal, Atoll-style dynamic island for macOS with daily

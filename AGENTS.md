@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Notes for anyone (human or agent) changing Islet.
+Notes for anyone (human or agent) changing lost_Island.
 
 ## Build and verify
 
@@ -19,7 +19,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 - Screen capture is often blocked by TCC; use snapshots instead of
   `screencapture`.
 - The window is an `NSPanel` at `.statusBar`. Verify it with
-  `CGWindowListCopyWindowInfo` (owner name `Islet`, layer 25) rather than a
+  `CGWindowListCopyWindowInfo` (owner name `lost_Island`, layer 25) rather than a
   screenshot.
 
 ## Architecture
@@ -69,7 +69,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    `auxiliaryTopRightArea`; fall back to a 150×30 floating pill on non-notch
    displays.
 8. **Commands need a live process.** `MRMediaRemoteSendCommand` returns true but
-   is only delivered while the calling process stays alive. Islet is long-lived,
+   is only delivered while the calling process stays alive. lost_Island is long-lived,
    so in-process commands work; a one-shot CLI must run a run loop for ~1 s.
 9. **Screen Time is local.** macOS does not expose system Screen Time totals
    without Full Disk Access (Knowledge DB) or a DeviceActivity report extension.
