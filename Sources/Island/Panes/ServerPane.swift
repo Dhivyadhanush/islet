@@ -82,8 +82,13 @@ struct ServerPane: View {
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Circle()
-                    .fill(system.isOnline ? Color.white : Theme.tertiary)
-                    .frame(width: 4, height: 4)
+                    .fill(system.isOnline ? Theme.online : Theme.offline)
+                    .frame(width: 5, height: 5)
+                    .shadow(
+                        color: (system.isOnline ? Theme.online : Theme.offline).opacity(0.55),
+                        radius: 2.5
+                    )
+                    .help(system.isOnline ? "Online" : "Offline")
                 Text(system.name)
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(Theme.text)
@@ -162,7 +167,7 @@ struct ServerPane: View {
                             .fill(Color.white.opacity(0.12))
                             .frame(height: 2.5)
                         Capsule()
-                            .fill(Color.white.opacity(0.85))
+                            .fill(loadColor(clamped))
                             .frame(width: max(2, geo.size.width * clamped), height: 2.5)
                     }
                 }
@@ -171,6 +176,14 @@ struct ServerPane: View {
                 Color.clear.frame(height: 2.5)
             }
         }
+    }
+
+    /// Bar colour: below 40% green, 40–79% blue, 80% and up red.
+    private func loadColor(_ fraction: CGFloat) -> Color {
+        let percent = fraction * 100
+        if percent >= 80 { return Theme.loadHigh }
+        if percent >= 40 { return Theme.loadMedium }
+        return Theme.loadLow
     }
 
     private func networkText(_ system: BeszelMetrics) -> String {

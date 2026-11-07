@@ -100,7 +100,9 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     `@AppStorage`. The row is a weighted grid (CPU/RAM/Disk 1.0, NET 1.7) so
     removing a metric re-justifies the rest across the full width, and each
     system row is `maxHeight: .infinity` so the rows share the height. CPU, RAM
-    and Disk render a 2.5 pt capsule bar under the value; NET has no bar.
+    and Disk render a 2.5 pt capsule bar under the value; NET has no bar. Bar
+    colour is `< 40%` green, `40–79%` blue, `>= 80%` red (`Theme.loadLow/
+    Medium/High`); the system dot is `Theme.online` / `Theme.offline`.
     Credentials live in `~/Library/Application Support/lost_Island/credentials.json`
     with 0600 permissions so they survive native/universal rebuilds.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding

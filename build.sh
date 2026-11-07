@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 APP="build/lost_Island.app"
 EXEC="lost_Island"
-VERSION="${VERSION:-0.7.6}"
+VERSION="${VERSION:-0.7.7}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"

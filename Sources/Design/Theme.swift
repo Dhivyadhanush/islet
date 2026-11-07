@@ -10,6 +10,13 @@ enum Theme {
     static let fill = Color.white.opacity(0.09)
     static let fillStrong = Color.white.opacity(0.16)
 
+    // Status accents, used only where they carry meaning (server health, load).
+    static let online = Color(red: 0.30, green: 0.87, blue: 0.48)
+    static let offline = Color(red: 0.98, green: 0.36, blue: 0.36)
+    static let loadLow = online
+    static let loadMedium = Color(red: 0.36, green: 0.66, blue: 1.00)
+    static let loadHigh = offline
+
     static let spring = Animation.spring(response: 0.40, dampingFraction: 0.76)
     static var motion: Animation {
         if UserDefaults.standard.bool(forKey: Defaults.calmMotion) {

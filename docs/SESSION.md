@@ -295,3 +295,23 @@ number so they read clearly.
 - The label/value baseline aligns via `HStack(alignment: .firstTextBaseline)`;
   the metric row grew from 22 pt to 34 pt to fit the taller text plus the bar.
 - Version 0.7.6.
+
+## Phase 11 — status colours (7 Nov 2026)
+
+Request: green/red dot per system; bar colours by load; notch HUD for volume and
+brightness.
+
+- The per-system dot is `Theme.online` (green) when `isOnline`, `Theme.offline`
+  (red) otherwise, with a soft glow.
+- Bar fill is colour-coded: `< 40%` green (`Theme.loadLow`), `40–79%` blue
+  (`Theme.loadMedium`), `>= 80%` red (`Theme.loadHigh`). The 40–50 band the
+  request left open is treated as blue.
+- Snapshot sample data now spans all three bands (Server1 18/62/88, Pi 7/31/46)
+  so `docs/preview-server.png` shows the palette.
+- Volume/brightness notch HUD: **not added.** macOS draws its own volume and
+  brightness OSD through Control Center, and there is no public API to suppress
+  it. Consuming the hardware keys needs an Accessibility event tap (volume can
+  then be set via CoreAudio), but brightness has no public setter at all, so the
+  pair cannot be done cleanly. Per the request, skipped rather than shipping a
+  duplicate HUD.
+- Version 0.7.7.

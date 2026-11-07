@@ -80,7 +80,9 @@ open /Applications/lost_Island.app
    Disk and Network. Only the checked metrics appear; the remaining ones
    auto-justify across the full row and the system rows share the height
    (uncheck Network and CPU/RAM/Disk spread edge-to-edge). CPU, RAM and Disk
-   also show a percentage bar under the value.
+   also show a percentage bar under the value. The status dot is green when the
+   machine is online and red when it is not; bars are green below 40%, blue
+   from 40% to 79%, and red at 80% and above.
 4. **Choose modules.** Settings → **Modules**: enable or disable any tab.
 5. **Connect Beszel.** Settings → **Server (Beszel)**: hub URL, read-only
    email/password, optional Cloudflare Access Client ID/Secret.
@@ -217,7 +219,8 @@ Open **Settings** from the menu bar or the gear in the island.
 
 - Modules: Music, Network, Screen Time, Controls, Calendar, Server.
 - Server metrics: CPU / RAM / Disk / Network checkboxes (only checked metrics
-  show; the rest auto-fill the row). CPU/RAM/Disk include a percentage bar.
+  show; the rest auto-fill the row). CPU/RAM/Disk include a percentage bar and
+  a green/red online dot per system.
 - Behavior: expand on hover, battery in header, launch at login.
 - Motion: Calm animations.
 - Network: today's total, live rate and a reset button.
@@ -236,6 +239,10 @@ Open **Settings** from the menu bar or the gear in the island.
   the Server tab shows a setup prompt. If Cloudflare Access is enabled, the app
   also needs an Access service token.
 - Brightness applies to the built-in display. External displays are left alone.
+- **No custom volume/brightness HUD.** macOS draws its own volume and brightness
+  overlay through Control Center, and there is no public API to suppress it.
+  lost_Island therefore leaves those to the system instead of drawing a second
+  bar in the notch.
 - The app is ad-hoc signed. A Developer ID build would remove the Gatekeeper
   warning; the source is here if you want to sign it yourself.
 - Calendar access is read-only.
