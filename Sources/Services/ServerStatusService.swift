@@ -37,8 +37,8 @@ final class ServerStatusService: ObservableObject {
         static let url = "islet.beszel.url"
         static let email = "islet.beszel.email"
         static let accessID = "islet.beszel.accessID"
-        static let passwordAccount = "beszel.password.v3"
-        static let accessSecretAccount = "beszel.accessSecret.v3"
+        static let passwordAccount = "beszel.password.v4"
+        static let accessSecretAccount = "beszel.accessSecret.v4"
     }
 
     var publicConfig: PublicConfig {

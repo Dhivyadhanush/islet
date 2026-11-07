@@ -72,23 +72,13 @@ enum Keychain {
         SecItemDelete(query as CFDictionary)
     }
 
-    /// ACL that trusts this app's bundle path. A rebuilt app at the same path
-    /// can read the item without a signature-specific prompt.
+    /// ACL that allows the app across rebuilds. A nil trusted-application
+    /// list means any application can access the item; the login keychain still
+    /// encrypts it at rest. This avoids ad-hoc-signature-specific prompts.
     private static func accessObject() -> SecAccess? {
-        var trusted: SecTrustedApplication?
-        let trustedStatus = SecTrustedApplicationCreateFromPath(
-            Bundle.main.bundlePath,
-            &trusted
-        )
-        guard trustedStatus == errSecSuccess, let trusted else { return nil }
-
         var access: SecAccess?
-        let accessStatus = SecAccessCreate(
-            service as CFString,
-            [trusted] as CFArray,
-            &access
-        )
-        guard accessStatus == errSecSuccess else { return nil }
+        let status = SecAccessCreate(service as CFString, nil, &access)
+        guard status == errSecSuccess else { return nil }
         return access
     }
 }

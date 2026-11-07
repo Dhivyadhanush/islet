@@ -258,4 +258,4 @@ fill the width.
 - Keychain items moved to v3 accounts (`beszel.password.v3` /
   `beszel.accessSecret.v3`) with a `SecAccess` trusted app path, so the Beszel
   credential survives rebuilds at `/Applications/lost_Island.app`.
-- Version 0.7.2.
+- Version 0.7.3: the v3 path ACL did not survive the universal build; moved to v4 accounts with an allow-all `SecAccess` so the login-keychain item works across rebuilds.

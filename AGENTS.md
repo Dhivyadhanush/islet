@@ -98,9 +98,9 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     visibility is controlled by `Defaults.serverCPU/RAM/Disk/Network` and the
     Settings → Server metrics checkboxes; `ServerPane` reads them via
     `@AppStorage`. The row uses flexible spacers, so removing a metric spreads
-    the remaining ones across the full width. Keychain items use a path-based
-    `SecAccess` with v3 accounts so the Beszel secret survives rebuilds at the
-    same app path.
+    the remaining ones across the full width. Keychain items use v4 accounts
+    with an allow-all `SecAccess` so the Beszel secret survives native/universal
+    rebuilds; the login keychain still encrypts it at rest.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 
