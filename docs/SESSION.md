@@ -283,3 +283,15 @@ on both axes when metrics are added or removed.
   is the percentage); NET renders an empty 2.5 pt spacer so label baselines and
   row heights line up across all columns.
 - Version 0.7.5.
+
+## Phase 10 — larger metric labels (7 Nov 2026)
+
+Request: the CPU/RAM/DISK/NET words were too small; make them bigger than the
+number so they read clearly.
+
+- `ServerPane.metric` label is now 12 pt bold (was 7.5 pt semibold) in full
+  white with 0.8 tracking; the value is 9.5 pt monospaced at 62% opacity, so the
+  label is the dominant element.
+- The label/value baseline aligns via `HStack(alignment: .firstTextBaseline)`;
+  the metric row grew from 22 pt to 34 pt to fit the taller text plus the bar.
+- Version 0.7.6.

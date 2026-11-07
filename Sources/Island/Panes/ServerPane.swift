@@ -118,7 +118,7 @@ struct ServerPane: View {
                 }
             }
         }
-        .frame(height: 22)
+        .frame(height: 34)
     }
 
     private func metricItems(
@@ -142,14 +142,14 @@ struct ServerPane: View {
 
     private func metric(_ label: String, _ value: String, fraction: CGFloat?) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(label)
-                    .font(.system(size: 7.5, weight: .semibold))
-                    .tracking(0.7)
-                    .foregroundStyle(Theme.tertiary)
+                    .font(.system(size: 12, weight: .bold))
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.text)
                 Text(value)
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(Theme.text.opacity(0.9))
+                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Theme.text.opacity(0.62))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
