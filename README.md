@@ -18,7 +18,11 @@ disappears into the notch; hover the notch to open it.
 - **Music that actually follows the system.** Apple Music, Spotify and browser
   playback (Safari, Chrome, Brave, Arc, Firefox, Zen) appear in the island with
   artwork, title, artist, source app, scrubbable progress and transport
-  controls.
+  controls. The progress bar, play button and artwork glow take their colour
+  from the current cover.
+- **Playing indicator in the menu bar.** While audio is playing, a small
+  waveform item appears next to the other menu-bar extras and opens the Music
+  tab; it disappears as soon as playback stops.
 - **Network data on hover.** Today's download/upload total, a live rate and a
   seven-day chart — in the expanded card only, so the collapsed notch stays
   clean.
@@ -88,7 +92,11 @@ open /Applications/lost_Island.app
    email/password, optional Cloudflare Access Client ID/Secret.
 6. **Tune the island.** Settings → **Behavior** (hover, battery, launch at
    login) and **Motion** (calm animations).
-7. **Menu bar item:** show/hide, settings, launch at login, quit.
+7. **Save your preferences.** Settings changes are drafted locally; press
+   **Save** (⌘S) to apply them, or **Revert** to discard. Nothing changes in the
+   island until you save.
+8. **Menu bar item:** show/hide, settings, launch at login, quit. While music
+   plays, a second waveform item appears and opens the Music tab on click.
 
 Click anywhere outside the island to close it.
 
@@ -215,7 +223,10 @@ system frameworks. It does not send data anywhere.
 
 ## Configuration
 
-Open **Settings** from the menu bar or the gear in the island.
+Open **Settings** from the menu bar or the gear in the island. Changes are
+drafted in the window; press **Save** (⌘S) to apply them or **Revert** to
+discard. The Server section keeps its own **Save & Test** for the Beszel
+connection.
 
 - Modules: Music, Network, Screen Time, Controls, Calendar, Server.
 - Server metrics: CPU / RAM / Disk / Network checkboxes (only checked metrics

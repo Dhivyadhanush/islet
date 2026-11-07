@@ -8,19 +8,8 @@ struct SettingsView: View {
     @EnvironmentObject private var server: ServerStatusService
     @EnvironmentObject private var nowPlaying: NowPlaying
 
-    @AppStorage(Defaults.showMusic) private var showMusic = true
-    @AppStorage(Defaults.showNetwork) private var showNetwork = true
-    @AppStorage(Defaults.showScreenTime) private var showScreenTime = true
-    @AppStorage(Defaults.showControls) private var showControls = true
-    @AppStorage(Defaults.showCalendar) private var showCalendar = true
-    @AppStorage(Defaults.showServer) private var showServer = true
-    @AppStorage(Defaults.hoverExpand) private var hoverExpand = true
-    @AppStorage(Defaults.calmMotion) private var calmMotion = false
-    @AppStorage(Defaults.showBattery) private var showBattery = true
-    @AppStorage(Defaults.serverCPU) private var serverCPU = true
-    @AppStorage(Defaults.serverRAM) private var serverRAM = true
-    @AppStorage(Defaults.serverDisk) private var serverDisk = true
-    @AppStorage(Defaults.serverNetwork) private var serverNetwork = true
+    @State private var draft = SettingsDraft.load()
+    @State private var savedNote = false
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var loginError: String?
@@ -37,37 +26,37 @@ struct SettingsView: View {
                     icon: "music.note",
                     title: "Music",
                     subtitle: "Now playing, artwork and transport controls",
-                    isOn: $showMusic
+                    isOn: $draft.showMusic
                 )
                 moduleRow(
                     icon: "arrow.up.arrow.down",
                     title: "Network",
                     subtitle: "Today's usage, live rate and a seven-day chart",
-                    isOn: $showNetwork
+                    isOn: $draft.showNetwork
                 )
                 moduleRow(
                     icon: "hourglass",
                     title: "Screen Time",
                     subtitle: "Today's frontmost-app time and top apps",
-                    isOn: $showScreenTime
+                    isOn: $draft.showScreenTime
                 )
                 moduleRow(
                     icon: "slider.horizontal.3",
                     title: "Controls",
                     subtitle: "Volume and display brightness",
-                    isOn: $showControls
+                    isOn: $draft.showControls
                 )
                 moduleRow(
                     icon: "calendar",
                     title: "Calendar",
                     subtitle: "Today's events and one-click meeting links",
-                    isOn: $showCalendar
+                    isOn: $draft.showCalendar
                 )
                 moduleRow(
                     icon: "server.rack",
                     title: "Server",
                     subtitle: "Placeholder for your server-status integration",
-                    isOn: $showServer
+                    isOn: $draft.showServer
                 )
             } header: {
                 Text("Modules")
@@ -78,8 +67,8 @@ struct SettingsView: View {
             }
 
             Section("Behavior") {
-                Toggle("Expand on hover", isOn: $hoverExpand)
-                Toggle("Show battery in the header", isOn: $showBattery)
+                Toggle("Expand on hover", isOn: $draft.hoverExpand)
+                Toggle("Show battery in the header", isOn: $draft.showBattery)
                 Toggle("Launch at login", isOn: $launchAtLogin)
                 if let loginError {
                     Text(loginError)
@@ -89,7 +78,7 @@ struct SettingsView: View {
             }
 
             Section("Motion") {
-                Toggle("Calm animations", isOn: $calmMotion)
+                Toggle("Calm animations", isOn: $draft.calmMotion)
                 Text("Calm uses a softer spring with less overshoot.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -125,13 +114,13 @@ struct SettingsView: View {
             }
 
             Section("Server metrics") {
-                Toggle("CPU", isOn: $serverCPU)
+                Toggle("CPU", isOn: $draft.serverCPU)
                     .toggleStyle(.checkbox)
-                Toggle("RAM", isOn: $serverRAM)
+                Toggle("RAM", isOn: $draft.serverRAM)
                     .toggleStyle(.checkbox)
-                Toggle("Disk", isOn: $serverDisk)
+                Toggle("Disk", isOn: $draft.serverDisk)
                     .toggleStyle(.checkbox)
-                Toggle("Network", isOn: $serverNetwork)
+                Toggle("Network", isOn: $draft.serverNetwork)
                     .toggleStyle(.checkbox)
                 Text("Only checked metrics appear in the Server tab.")
                     .font(.caption)
@@ -215,6 +204,9 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            saveBar
+        }
         .frame(width: 520, height: 700)
         .onChange(of: launchAtLogin) { _, enabled in
             do {
@@ -226,10 +218,50 @@ struct SettingsView: View {
             }
         }
         .onAppear {
+            draft = .load()
             let config = server.publicConfig
             serverURL = config.baseURL
             serverEmail = config.email
             serverAccessID = config.accessClientID
+        }
+    }
+
+    private var saveBar: some View {
+        HStack(spacing: 10) {
+            if savedNote {
+                Label("Saved", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .transition(.opacity)
+            } else {
+                Text("Changes apply when you save.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Button("Revert") {
+                draft = .load()
+            }
+            .disabled(draft == SettingsDraft.load())
+
+            Button("Save") {
+                saveDraft()
+            }
+            .keyboardShortcut("s", modifiers: .command)
+            .buttonStyle(.borderedProminent)
+        }
+        .font(.callout)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+    }
+
+    private func saveDraft() {
+        draft.save()
+        withAnimation(.easeOut(duration: 0.15)) { savedNote = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            withAnimation(.easeOut(duration: 0.15)) { savedNote = false }
         }
     }
 
@@ -297,7 +329,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.7.7"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.8.0"
         return "v\(short)"
     }
 
@@ -305,5 +337,59 @@ struct SettingsView: View {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
             NSWorkspace.shared.open(url)
         }
+    }
+}
+
+/// Editable copy of the preferences. Settings only touch `UserDefaults` when the
+/// user presses Save, so a half-finished change never leaks into the island.
+private struct SettingsDraft: Equatable {
+    var showMusic = true
+    var showNetwork = true
+    var showScreenTime = true
+    var showControls = true
+    var showCalendar = true
+    var showServer = true
+    var hoverExpand = true
+    var calmMotion = false
+    var showBattery = true
+    var serverCPU = true
+    var serverRAM = true
+    var serverDisk = true
+    var serverNetwork = true
+
+    static func load() -> SettingsDraft {
+        let defaults = UserDefaults.standard
+        return SettingsDraft(
+            showMusic: defaults.bool(forKey: Defaults.showMusic),
+            showNetwork: defaults.bool(forKey: Defaults.showNetwork),
+            showScreenTime: defaults.bool(forKey: Defaults.showScreenTime),
+            showControls: defaults.bool(forKey: Defaults.showControls),
+            showCalendar: defaults.bool(forKey: Defaults.showCalendar),
+            showServer: defaults.bool(forKey: Defaults.showServer),
+            hoverExpand: defaults.bool(forKey: Defaults.hoverExpand),
+            calmMotion: defaults.bool(forKey: Defaults.calmMotion),
+            showBattery: defaults.bool(forKey: Defaults.showBattery),
+            serverCPU: defaults.bool(forKey: Defaults.serverCPU),
+            serverRAM: defaults.bool(forKey: Defaults.serverRAM),
+            serverDisk: defaults.bool(forKey: Defaults.serverDisk),
+            serverNetwork: defaults.bool(forKey: Defaults.serverNetwork)
+        )
+    }
+
+    func save() {
+        let defaults = UserDefaults.standard
+        defaults.set(showMusic, forKey: Defaults.showMusic)
+        defaults.set(showNetwork, forKey: Defaults.showNetwork)
+        defaults.set(showScreenTime, forKey: Defaults.showScreenTime)
+        defaults.set(showControls, forKey: Defaults.showControls)
+        defaults.set(showCalendar, forKey: Defaults.showCalendar)
+        defaults.set(showServer, forKey: Defaults.showServer)
+        defaults.set(hoverExpand, forKey: Defaults.hoverExpand)
+        defaults.set(calmMotion, forKey: Defaults.calmMotion)
+        defaults.set(showBattery, forKey: Defaults.showBattery)
+        defaults.set(serverCPU, forKey: Defaults.serverCPU)
+        defaults.set(serverRAM, forKey: Defaults.serverRAM)
+        defaults.set(serverDisk, forKey: Defaults.serverDisk)
+        defaults.set(serverNetwork, forKey: Defaults.serverNetwork)
     }
 }

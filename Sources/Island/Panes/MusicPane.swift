@@ -50,9 +50,22 @@ struct MusicPane: View {
                 controls(track)
             }
             .padding(.top, 2)
+            .background(alignment: .topLeading) {
+                Circle()
+                    .fill(accent.opacity(0.16))
+                    .frame(width: 150, height: 150)
+                    .blur(radius: 40)
+                    .offset(x: -30, y: -40)
+                    .allowsHitTesting(false)
+            }
         } else {
             emptyState
         }
+    }
+
+    /// Colour pulled from the current artwork; white when there is none.
+    private var accent: Color {
+        ArtworkPalette.accent(for: nowPlaying.track?.artwork) ?? .white
     }
 
     private func artwork(_ image: NSImage?) -> some View {
@@ -76,6 +89,11 @@ struct MusicPane: View {
         }
         .frame(width: 58, height: 58)
         .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .strokeBorder(accent.opacity(0.45), lineWidth: 1)
+        }
+        .shadow(color: accent.opacity(0.35), radius: 9, y: 2)
     }
 
     private func progress(_ track: NowPlaying.Track) -> some View {
@@ -91,11 +109,11 @@ struct MusicPane: View {
                         .fill(Color.white.opacity(0.14))
                         .frame(height: 3)
                     Capsule()
-                        .fill(Color.white.opacity(0.9))
+                        .fill(accent)
                         .frame(width: max(3, geo.size.width * fraction), height: 3)
                     if scrubFraction != nil {
                         Circle()
-                            .fill(.white)
+                            .fill(accent)
                             .frame(width: 7, height: 7)
                             .offset(x: max(0, min(geo.size.width - 7, geo.size.width * fraction - 3.5)))
                     }
@@ -141,7 +159,7 @@ struct MusicPane: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.black)
                     .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white))
+                    .background(Circle().fill(accent))
                     .contentShape(Circle())
             }
             Button { nowPlaying.next() } label: {

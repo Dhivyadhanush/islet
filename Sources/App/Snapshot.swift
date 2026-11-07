@@ -54,7 +54,7 @@ enum Snapshot {
             duration: 218,
             elapsed: 43,
             rate: 1,
-            artwork: nil,
+            artwork: sampleArtwork(),
             source: "Music",
             sourceIcon: nil
         )
@@ -135,6 +135,29 @@ enum Snapshot {
                 down: values[index].0,
                 up: values[index].1
             )
+        }
+    }
+
+    /// A warm magenta/orange cover so the snapshot shows the artwork tint.
+    private static func sampleArtwork() -> NSImage {
+        let size = NSSize(width: 300, height: 300)
+        return NSImage(size: size, flipped: false) { rect in
+            let gradient = NSGradient(colors: [
+                NSColor(red: 0.93, green: 0.32, blue: 0.47, alpha: 1),
+                NSColor(red: 0.98, green: 0.58, blue: 0.24, alpha: 1),
+            ])
+            gradient?.draw(in: rect, angle: -55)
+
+            NSColor.white.withAlphaComponent(0.22).setFill()
+            NSBezierPath(
+                ovalIn: NSRect(x: 40, y: 40, width: 220, height: 220)
+            ).fill()
+
+            NSColor.white.withAlphaComponent(0.18).setFill()
+            NSBezierPath(
+                ovalIn: NSRect(x: 95, y: 95, width: 110, height: 110)
+            ).fill()
+            return true
         }
     }
 

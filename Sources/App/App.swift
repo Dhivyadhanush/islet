@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
@@ -15,6 +16,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: IslandController!
     private var settingsController: SettingsWindowController!
     private var statusItem: NSStatusItem?
+    private var playingItem: NSStatusItem?
+    private var nowPlayingObserver: AnyCancellable?
     private var showItem: NSMenuItem?
     private var loginItem: NSMenuItem?
 
@@ -56,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         battery.start()
         server.start()
         setupStatusItem()
+        observeNowPlaying()
 
         if isDiagnose {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
@@ -90,6 +94,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         network.flush()
         nowPlaying.stop()
         server.stop()
+        if let playingItem {
+            NSStatusBar.system.removeStatusItem(playingItem)
+        }
+    }
+
+    // MARK: - Now-playing menu bar item
+
+    /// A small waveform item that exists only while music is actually playing.
+    /// It disappears the moment playback stops.
+    private func observeNowPlaying() {
+        guard !isDiagnose else { return }
+        nowPlayingObserver = nowPlaying.$track
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] track in
+                self?.updatePlayingItem(track)
+            }
+    }
+
+    private func updatePlayingItem(_ track: NowPlaying.Track?) {
+        guard track?.isPlaying == true else {
+            if let playingItem {
+                NSStatusBar.system.removeStatusItem(playingItem)
+                self.playingItem = nil
+            }
+            return
+        }
+
+        if playingItem == nil {
+            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+            if let button = item.button {
+                let image = NSImage(
+                    systemSymbolName: "waveform",
+                    accessibilityDescription: "Now playing"
+                )
+                image?.isTemplate = true
+                button.image = image
+                button.target = self
+                button.action = #selector(openMusicFromMenuBar)
+                button.sendAction(on: [.leftMouseUp])
+                button.toolTip = "Now playing"
+            }
+            playingItem = item
+        }
+
+        guard let track else { return }
+        let title = track.title.isEmpty ? "Now playing" : track.title
+        let artist = track.artist
+        playingItem?.button?.toolTip = artist.isEmpty ? title : "\(title) — \(artist)"
+    }
+
+    @objc private func openMusicFromMenuBar() {
+        state.tab = .music
+        controller.show()
     }
 
     // MARK: - Status item

@@ -315,3 +315,24 @@ brightness.
   pair cannot be done cleanly. Per the request, skipped rather than shipping a
   duplicate HUD.
 - Version 0.7.7.
+
+## Phase 12 — artwork accent, playing item, explicit save (7 Nov 2026)
+
+Request: colour the player from the playing artwork; show a playing symbol in
+the menu bar that disappears when playback stops; add a Save button to Settings.
+
+- `ArtworkPalette` samples the cover into a 12×12 bitmap, weights saturated
+  pixels, then clamps saturation/brightness for contrast on black. Cached by
+  `ObjectIdentifier(NSImage)`. `MusicPane` uses it for the progress fill, scrub
+  knob, play button, artwork ring/glow and a soft background wash; falls back to
+  white without artwork.
+- `AppDelegate` subscribes to `NowPlaying.$track` and creates a template
+  `waveform` `NSStatusItem` while `track.isPlaying`, removing it on pause/stop.
+  Clicking it selects the Music tab and shows the island. It is skipped in
+  `--diagnose`.
+- `SettingsView` now edits a `SettingsDraft` in `@State`; Save (⌘S) writes
+  `UserDefaults`, Revert reloads them, and a transient "Saved" label confirms.
+  Server has its own `Save & Test` as before.
+- Snapshot uses a generated magenta/orange cover so the tint is visible in
+  `docs/preview-music.png`.
+- Version 0.8.0.
