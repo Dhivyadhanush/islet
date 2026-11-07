@@ -144,8 +144,9 @@ If Cloudflare Access is on, add `CF_ACCESS_CLIENT_ID` and
 API used: `POST /api/collections/users/auth-with-password`,
 `GET /api/collections/systems/records`,
 `GET /api/collections/system_stats/records`. The password and Access secret are
-stored in Keychain; the hub URL, email and Access client ID live in
-UserDefaults.
+stored locally in
+`~/Library/Application Support/lost_Island/credentials.json` with 0600
+permissions; the hub URL, email and Access client ID live in UserDefaults.
 
 ### Raspberry Pi agent
 
@@ -252,7 +253,7 @@ SwiftUI island (NSPanel, .statusBar, non-activating)
 │   └── ServerPane     Beszel status + CPU/RAM/disk/uptime
 └── Services           NowPlaying, NetworkMonitor, ScreenTimeService,
                        SystemControls, CalendarService, BatteryMonitor,
-                       ServerStatusService, BeszelClient, Keychain, MediaBridge
+                       ServerStatusService, BeszelClient, CredentialStore, MediaBridge
 ```
 
 The collapsed window is exactly the notch plus a 10 pt transparent hover margin.

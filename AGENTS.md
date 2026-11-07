@@ -84,23 +84,23 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     active `ni` interface (KB/s). Auth uses PocketBase
     (`POST /api/collections/users/auth-with-password`) and reads `systems` +
     `system_stats`. Hub URL/email/Access client ID live in UserDefaults; the
-    password and Access secret live in Keychain under `beszel.password.v2` /
-    `beszel.accessSecret.v2` (the v2 suffix avoids reusing an item bound to an
-    older ad-hoc signature). Cloudflare Access service-token
+    password and Access secret live in a 0600 local credentials file under
+    Application Support (Keychain ACLs do not survive ad-hoc rebuilds).
+    Cloudflare Access service-token
     headers are supported. `--beszel-test` reads `BESZEL_URL`, `BESZEL_EMAIL`,
     `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`. The
     `NSAllowsLocalNetworking` ATS key permits local/tunnel HTTP for testing.
-    `--beszel-save` writes the same config headlessly; run it from the installed
-    app so the Keychain item is created with the app's own signature.
+    `--beszel-save` writes the same config headlessly; it creates the 0600
+    credentials file and can be run from any copy of the app.
     The Pi runs the armv7 agent as `beszel-agent.service`, configured in
     `/etc/beszel-agent.conf` with `KEY`, `HUB_URL=http://192.168.1.22:8090` and
     the per-system `TOKEN` from the `fingerprints` collection. Server metric
     visibility is controlled by `Defaults.serverCPU/RAM/Disk/Network` and the
     Settings → Server metrics checkboxes; `ServerPane` reads them via
     `@AppStorage`. The row uses flexible spacers, so removing a metric spreads
-    the remaining ones across the full width. Keychain items use v4 accounts
-    with an allow-all `SecAccess` so the Beszel secret survives native/universal
-    rebuilds; the login keychain still encrypts it at rest.
+    the remaining ones across the full width. Credentials live in
+    `~/Library/Application Support/lost_Island/credentials.json` with 0600
+    permissions so they survive native/universal rebuilds.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 

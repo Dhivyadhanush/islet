@@ -5,7 +5,8 @@ import Foundation
 ///
 /// Configuration is entered in Settings → Server. The hub URL, email and
 /// Cloudflare Access client ID are stored in UserDefaults; the Beszel password
-/// and Access client secret are stored in Keychain.
+/// and Access client secret are stored in a 0600 local credentials file so they
+/// survive rebuilds of this ad-hoc-signed app.
 @MainActor
 final class ServerStatusService: ObservableObject {
     enum Status: Equatable {
@@ -37,8 +38,6 @@ final class ServerStatusService: ObservableObject {
         static let url = "islet.beszel.url"
         static let email = "islet.beszel.email"
         static let accessID = "islet.beszel.accessID"
-        static let passwordAccount = "beszel.password.v4"
-        static let accessSecretAccount = "beszel.accessSecret.v4"
     }
 
     var publicConfig: PublicConfig {
@@ -47,8 +46,8 @@ final class ServerStatusService: ObservableObject {
             baseURL: defaults.string(forKey: Keys.url) ?? "",
             email: defaults.string(forKey: Keys.email) ?? "",
             accessClientID: defaults.string(forKey: Keys.accessID) ?? "",
-            hasPassword: !(Keychain.get(account: Keys.passwordAccount) ?? "").isEmpty,
-            hasAccessSecret: !(Keychain.get(account: Keys.accessSecretAccount) ?? "").isEmpty
+            hasPassword: !(CredentialStore.load()?.password ?? "").isEmpty,
+            hasAccessSecret: !(CredentialStore.load()?.accessSecret ?? "").isEmpty
         )
     }
 
@@ -140,12 +139,10 @@ final class ServerStatusService: ObservableObject {
         defaults.set(email.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.email)
         defaults.set(accessClientID.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.accessID)
 
-        if !password.isEmpty {
-            Keychain.set(password, account: Keys.passwordAccount)
-        }
-        if !accessClientSecret.isEmpty {
-            Keychain.set(accessClientSecret, account: Keys.accessSecretAccount)
-        }
+        CredentialStore.save(
+            password: password.isEmpty ? nil : password,
+            accessSecret: accessClientSecret.isEmpty ? nil : accessClientSecret
+        )
     }
 
     func clear() {
@@ -153,8 +150,7 @@ final class ServerStatusService: ObservableObject {
         defaults.removeObject(forKey: Keys.url)
         defaults.removeObject(forKey: Keys.email)
         defaults.removeObject(forKey: Keys.accessID)
-        Keychain.delete(account: Keys.passwordAccount)
-        Keychain.delete(account: Keys.accessSecretAccount)
+        CredentialStore.clear()
         systems = []
         lastError = nil
         lastUpdated = nil
@@ -172,7 +168,7 @@ final class ServerStatusService: ObservableObject {
         let publicConfig = publicConfig
         guard !publicConfig.baseURL.isEmpty,
               !publicConfig.email.isEmpty,
-              let password = Keychain.get(account: Keys.passwordAccount),
+              let password = CredentialStore.load()?.password,
               !password.isEmpty
         else { return nil }
 
@@ -181,7 +177,7 @@ final class ServerStatusService: ObservableObject {
             email: publicConfig.email,
             password: password,
             accessClientID: publicConfig.accessClientID,
-            accessClientSecret: Keychain.get(account: Keys.accessSecretAccount) ?? ""
+            accessClientSecret: CredentialStore.load()?.accessSecret ?? ""
         )
     }
 }

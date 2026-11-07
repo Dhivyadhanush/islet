@@ -259,3 +259,12 @@ fill the width.
   `beszel.accessSecret.v3`) with a `SecAccess` trusted app path, so the Beszel
   credential survives rebuilds at `/Applications/lost_Island.app`.
 - Version 0.7.3: the v3 path ACL did not survive the universal build; moved to v4 accounts with an allow-all `SecAccess` so the login-keychain item works across rebuilds.
+
+## Phase 8 — 0600 credentials file (7 Nov 2026)
+
+- Keychain ACLs did not survive native/universal rebuilds. Moved the Beszel
+  password and Cloudflare Access secret to
+  `~/Library/Application Support/lost_Island/credentials.json`, created with
+  0600 permissions. URL/email/Access client ID remain in UserDefaults.
+- `--beszel-save` writes the file headlessly; the app reads it on launch.
+- Version 0.7.4.

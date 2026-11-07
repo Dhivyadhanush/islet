@@ -165,7 +165,7 @@ struct SettingsView: View {
                         .foregroundStyle(.red)
                 }
 
-                Text("Create a read-only user in Beszel → Settings → Users. If Cloudflare Access protects the hub, create a service token and paste its Client ID and Secret here. The password and secret are stored in Keychain.")
+                Text("Create a read-only user in Beszel → Settings → Users. If Cloudflare Access protects the hub, create a service token and paste its Client ID and Secret here. The password and secret are stored locally in a 0600 file and never leave this Mac.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -297,7 +297,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.7.3"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.7.4"
         return "v\(short)"
     }
 
