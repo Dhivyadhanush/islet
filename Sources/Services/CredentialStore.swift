@@ -15,25 +15,52 @@ enum CredentialStore {
     private static var directoryURL: URL {
         FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("lost_Island", isDirectory: true)
+            .appendingPathComponent("islet", isDirectory: true)
     }
 
     private static var fileURL: URL {
         directoryURL.appendingPathComponent("credentials.json")
     }
 
+    /// Pre-1.0 installs wrote to Application Support/lost_Island. Read that file
+    /// once, copy it to the new location, and drop the old copy.
+    private static var legacyFileURL: URL {
+        FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("lost_Island", isDirectory: true)
+            .appendingPathComponent("credentials.json")
+    }
+
     static func load() -> Credentials? {
-        guard let data = try? Data(contentsOf: fileURL),
-              let credentials = try? JSONDecoder().decode(Credentials.self, from: data)
-        else { return nil }
-        return credentials
+        if let credentials = decode(fileURL) {
+            return credentials
+        }
+        if let credentials = decode(legacyFileURL) {
+            write(credentials)
+            try? FileManager.default.removeItem(at: legacyFileURL)
+            return credentials
+        }
+        return nil
     }
 
     static func save(password: String?, accessSecret: String?) {
         var credentials = load() ?? Credentials()
         if let password, !password.isEmpty { credentials.password = password }
         if let accessSecret, !accessSecret.isEmpty { credentials.accessSecret = accessSecret }
+        write(credentials)
+    }
 
+    static func clear() {
+        try? FileManager.default.removeItem(at: fileURL)
+        try? FileManager.default.removeItem(at: legacyFileURL)
+    }
+
+    private static func decode(_ url: URL) -> Credentials? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(Credentials.self, from: data)
+    }
+
+    private static func write(_ credentials: Credentials) {
         do {
             try FileManager.default.createDirectory(
                 at: directoryURL,
@@ -50,9 +77,5 @@ enum CredentialStore {
             // The UI reports connection failures; a storage error here simply
             // leaves the previous credentials in place.
         }
-    }
-
-    static func clear() {
-        try? FileManager.default.removeItem(at: fileURL)
     }
 }

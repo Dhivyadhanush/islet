@@ -34,7 +34,7 @@ final class SettingsWindowController {
                 .environmentObject(nowPlaying)
             let hosting = NSHostingController(rootView: root)
             let newWindow = NSWindow(contentViewController: hosting)
-            newWindow.title = "lost_Island Settings"
+            newWindow.title = "islet Settings"
             newWindow.styleMask = [.titled, .closable, .miniaturizable]
             newWindow.setContentSize(NSSize(width: 520, height: 700))
             newWindow.center()

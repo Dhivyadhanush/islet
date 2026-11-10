@@ -153,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
-        let quit = NSMenuItem(title: "Quit lost_Island", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit islet", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
 
@@ -195,7 +195,7 @@ struct IsletMain {
     static func main() {
         if CommandLine.arguments.contains("--version") {
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
-            print("lost_Island \(version)")
+            print("islet \(version)")
             exit(0)
         }
 

@@ -275,7 +275,7 @@ enum Snapshot {
             ),
             CalendarService.EventItem(
                 id: "sample-3",
-                title: "Ship lost_Island",
+                title: "Ship islet",
                 start: offset(240),
                 end: offset(285),
                 isAllDay: false,

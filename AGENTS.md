@@ -1,15 +1,15 @@
 # AGENTS.md
 
-Notes for anyone (human or agent) changing lost_Island.
+Notes for anyone (human or agent) changing islet.
 
 ## Build and verify
 
 ```bash
 ./build.sh                                  # native arch
 ARCHS="arm64 x86_64" ./build.sh             # universal
-./build/lost_Island.app/Contents/MacOS/lost_Island --diagnose
-./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots
-./build/lost_Island.app/Contents/MacOS/lost_Island --beszel-test
+./build/islet.app/Contents/MacOS/islet --diagnose
+./build/islet.app/Contents/MacOS/islet --snapshot build/snapshots
+./build/islet.app/Contents/MacOS/islet --beszel-test
 ```
 
 - `--diagnose` starts the services, waits 3 s, prints network/screen time/
@@ -20,7 +20,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 - Screen capture is often blocked by TCC; use snapshots instead of
   `screencapture`.
 - The window is an `NSPanel` at `.statusBar`. Verify it with
-  `CGWindowListCopyWindowInfo` (owner name `lost_Island`, layer 25) rather than a
+  `CGWindowListCopyWindowInfo` (owner name `islet`, layer 25) rather than a
   screenshot.
 
 ## Architecture
@@ -33,8 +33,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/Island/IslandRootView.swift` | Notch silhouette, clip, transitions, dark scheme |
 | `Sources/Island/IslandShape.swift` | Animatable top/bottom corner radii |
 | `Sources/Island/ExpandedView.swift` | Tabs, battery, pin, gear |
+| `Sources/Island/NowPlayingChip.swift` | Waveform chip left of the notch |
 | `Sources/Island/Panes/*` | Music, network, screen time, controls, calendar, server |
 | `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, Beszel |
+| `Sources/Design/ArtworkPalette.swift` | Accent colour sampled from album art |
 | `Sources/Media/IsletMedia.m` | Objective-C dylib loaded by perl |
 | `Sources/Media/islet-media.pl` | Loader/stream entry point |
 | `Sources/Settings/*` | Settings window |
@@ -71,7 +73,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    `auxiliaryTopRightArea`; fall back to a 150×30 floating pill on non-notch
    displays.
 8. **Commands need a live process.** `MRMediaRemoteSendCommand` returns true but
-   is only delivered while the calling process stays alive. lost_Island is long-lived,
+   is only delivered while the calling process stays alive. islet is long-lived,
    so in-process commands work; a one-shot CLI must run a run loop for ~1 s.
 9. **Screen Time is local.** macOS does not expose system Screen Time totals
    without Full Disk Access (Knowledge DB) or a DeviceActivity report extension.
@@ -103,7 +105,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     and Disk render a 2.5 pt capsule bar under the value; NET has no bar. Bar
     colour is `< 40%` green, `40–79%` blue, `>= 80%` red (`Theme.loadLow/
     Medium/High`); the system dot is `Theme.online` / `Theme.offline`.
-    Credentials live in `~/Library/Application Support/lost_Island/credentials.json`
+    Credentials live in `~/Library/Application Support/islet/credentials.json`
     with 0600 permissions so they survive native/universal rebuilds.
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
@@ -135,10 +137,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 
 1. Bump `VERSION` in `build.sh` (and the Settings fallback version if needed).
 2. `ARCHS="arm64 x86_64" ./build.sh`
-3. `./build/lost_Island.app/Contents/MacOS/lost_Island --snapshot build/snapshots`
+3. `./build/islet.app/Contents/MacOS/islet --snapshot build/snapshots`
    and update `docs/preview-*.png`.
 4. Build the DMG:
-   `hdiutil create -volname "lost_Island" -srcfolder build/dmg -ov -format UDZO build/lost_Island-$VERSION.dmg`
-5. `gh release create v$VERSION build/lost_Island-$VERSION.dmg`
-6. Update `Casks/lost-island.rb` in the `homebrew-islet` tap with the new version
+   `hdiutil create -volname "islet" -srcfolder build/dmg -ov -format UDZO build/islet-$VERSION.dmg`
+5. `gh release create v$VERSION build/islet-$VERSION.dmg`
+6. Update `Casks/islet.rb` in the `homebrew-islet` tap with the new version
    and `shasum -a 256` of the DMG.

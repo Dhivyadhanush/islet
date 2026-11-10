@@ -36,6 +36,6 @@ struct SoloIslandMark: View {
         .frame(width: width, height: height)
         .clipShape(Capsule())
         .shadow(color: .black.opacity(0.22), radius: height * 0.12, y: height * 0.05)
-        .accessibilityLabel("lost_Island")
+        .accessibilityLabel("islet")
     }
 }

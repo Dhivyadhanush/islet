@@ -379,3 +379,20 @@ Request: use the waveform from `temblate.mp4` and drop the album thumbnail.
   the white waveform only, still 6 pt left of the notch.
 - The Music pane uses the same bar waveform in the artwork accent colour.
 - Version 0.8.3.
+
+## Phase 16 — rename to islet, 1.0.0 (10 Nov 2026)
+
+Request: rename the app from lost_Island to islet, push the latest version, and
+publish release notes.
+
+- Product, bundle, executable and DMG are now `islet` (`build/islet.app`,
+  `islet-<version>.dmg`). Bundle ID stays `dev.dhanuz.islet`, so UserDefaults
+  survive the rename.
+- Menu, Settings window, About text, accessibility labels and usage strings say
+  islet. `--version` prints `islet <version>`.
+- `CredentialStore` now writes to `~/Library/Application Support/islet/` and
+  migrates (then removes) the old `lost_Island/credentials.json` on first load.
+- The Homebrew cask is renamed to `islet` (`Casks/islet.rb`); the old
+  `lost-island` cask is retired. README documents the one-time migration:
+  `brew uninstall --cask lost-island` then `brew install --cask islet`.
+- Version 1.0.0.

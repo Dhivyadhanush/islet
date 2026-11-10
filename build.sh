@@ -2,9 +2,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="build/lost_Island.app"
-EXEC="lost_Island"
-VERSION="${VERSION:-0.8.3}"
+APP="build/islet.app"
+EXEC="islet"
+VERSION="${VERSION:-1.0.0}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"
@@ -74,9 +74,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <plist version="1.0">
 <dict>
   <key>CFBundleIdentifier</key><string>dev.dhanuz.islet</string>
-  <key>CFBundleName</key><string>lost_Island</string>
-  <key>CFBundleDisplayName</key><string>lost_Island</string>
-  <key>CFBundleExecutable</key><string>lost_Island</string>
+  <key>CFBundleName</key><string>islet</string>
+  <key>CFBundleDisplayName</key><string>islet</string>
+  <key>CFBundleExecutable</key><string>islet</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
@@ -89,10 +89,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <dict>
     <key>NSAllowsLocalNetworking</key><true/>
   </dict>
-  <key>NSCalendarsFullAccessUsageDescription</key><string>lost_Island shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
-  <key>NSCalendarsUsageDescription</key><string>lost_Island shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
-  <key>NSAppleEventsUsageDescription</key><string>lost_Island reads the current track from Music or Spotify only when the system now-playing information is unavailable. Nothing else is read or sent.</string>
-  <key>NSHumanReadableCopyright</key><string>lost_Island</string>
+  <key>NSCalendarsFullAccessUsageDescription</key><string>islet shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
+  <key>NSCalendarsUsageDescription</key><string>islet shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
+  <key>NSAppleEventsUsageDescription</key><string>islet reads the current track from Music or Spotify only when the system now-playing information is unavailable. Nothing else is read or sent.</string>
+  <key>NSHumanReadableCopyright</key><string>islet</string>
 </dict>
 </plist>
 PLIST

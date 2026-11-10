@@ -108,7 +108,7 @@ struct SettingsView: View {
                 Button("Reset screen time data") {
                     screenTime.reset()
                 }
-                Text("Tracked locally while lost_Island runs. macOS does not expose system Screen Time to third-party apps without Full Disk Access, so this is a local estimate, not Apple's number.")
+                Text("Tracked locally while islet runs. macOS does not expose system Screen Time to third-party apps without Full Disk Access, so this is a local estimate, not Apple's number.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -166,7 +166,7 @@ struct SettingsView: View {
                     Text(mediaStatus)
                         .foregroundStyle(.secondary)
                 }
-                Text("Safari, Chrome, Brave, Arc and Firefox report through the system now-playing service. lost_Island reads it locally; nothing is sent anywhere.")
+                Text("Safari, Chrome, Brave, Arc and Firefox report through the system now-playing service. islet reads it locally; nothing is sent anywhere.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -183,7 +183,7 @@ struct SettingsView: View {
                         Button("Open Settings") { openCalendarSettings() }
                     }
                 }
-                Text("Music and browsers need no permission. If macOS asks for Automation, allow it so lost_Island can read the current track.")
+                Text("Music and browsers need no permission. If macOS asks for Automation, allow it so islet can read the current track.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -196,7 +196,7 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 8)
                 HStack {
-                    Text("lost_Island")
+                    Text("islet")
                     Spacer()
                     Text(version)
                         .foregroundStyle(.secondary)
@@ -329,7 +329,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.8.3"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
         return "v\(short)"
     }
 
