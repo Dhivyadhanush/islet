@@ -396,3 +396,18 @@ publish release notes.
   `lost-island` cask is retired. README documents the one-time migration:
   `brew uninstall --cask lost-island` then `brew install --cask islet`.
 - Version 1.0.0.
+
+## Phase 17 — start at login in Save flow (12 Nov 2026)
+
+Request: expose a "start at login" option.
+
+- Settings → Behavior now says **Start at login** with a caption, and the value
+  is part of `SettingsDraft`: Save applies it, Revert restores it.
+- `LaunchAtLogin.isRegistered` treats `.requiresApproval` as on, so the toggle
+  does not flip off while macOS waits for approval; a note points to System
+  Settings → General → Login Items.
+- Menu-bar item renamed to **Start at Login** and uses the same registered
+  state.
+- The existing login item already points at `/Applications/islet.app`; bundle ID
+  is unchanged, so the registration survives the rename.
+- Version 1.0.1.

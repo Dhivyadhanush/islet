@@ -7,8 +7,15 @@ enum LaunchAtLogin {
         SMAppService.mainApp.status == .enabled
     }
 
+    /// True once macOS has the item, even if the user still has to approve it.
+    static var isRegistered: Bool {
+        let status = SMAppService.mainApp.status
+        return status == .enabled || status == .requiresApproval
+    }
+
     static func set(_ enabled: Bool) throws {
         if enabled {
+            guard !isRegistered else { return }
             try SMAppService.mainApp.register()
         } else {
             try SMAppService.mainApp.unregister()

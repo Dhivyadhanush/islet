@@ -11,7 +11,6 @@ struct SettingsView: View {
     @State private var draft = SettingsDraft.load()
     @State private var savedNote = false
 
-    @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var loginError: String?
     @State private var serverURL = ""
     @State private var serverEmail = ""
@@ -69,7 +68,10 @@ struct SettingsView: View {
             Section("Behavior") {
                 Toggle("Expand on hover", isOn: $draft.hoverExpand)
                 Toggle("Show battery in the header", isOn: $draft.showBattery)
-                Toggle("Launch at login", isOn: $launchAtLogin)
+                Toggle("Start at login", isOn: $draft.startAtLogin)
+                Text("Open islet automatically when you sign in to this Mac.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 if let loginError {
                     Text(loginError)
                         .font(.caption)
@@ -208,15 +210,6 @@ struct SettingsView: View {
             saveBar
         }
         .frame(width: 520, height: 700)
-        .onChange(of: launchAtLogin) { _, enabled in
-            do {
-                try LaunchAtLogin.set(enabled)
-                loginError = nil
-            } catch {
-                loginError = error.localizedDescription
-                launchAtLogin = LaunchAtLogin.isEnabled
-            }
-        }
         .onAppear {
             draft = .load()
             let config = server.publicConfig
@@ -259,9 +252,29 @@ struct SettingsView: View {
 
     private func saveDraft() {
         draft.save()
+        applyLoginSetting()
         withAnimation(.easeOut(duration: 0.15)) { savedNote = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
             withAnimation(.easeOut(duration: 0.15)) { savedNote = false }
+        }
+    }
+
+    private func applyLoginSetting() {
+        let desired = draft.startAtLogin
+        guard desired != LaunchAtLogin.isRegistered else {
+            loginError = nil
+            return
+        }
+        do {
+            try LaunchAtLogin.set(desired)
+            loginError = nil
+        } catch {
+            loginError = error.localizedDescription
+            draft.startAtLogin = LaunchAtLogin.isRegistered
+            return
+        }
+        if desired, LaunchAtLogin.statusText == "Waiting for approval" {
+            loginError = "Approve islet in System Settings → General → Login Items."
         }
     }
 
@@ -329,7 +342,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.1"
         return "v\(short)"
     }
 
@@ -351,6 +364,7 @@ private struct SettingsDraft: Equatable {
     var showServer = true
     var hoverExpand = true
     var calmMotion = false
+    var startAtLogin = false
     var showBattery = true
     var serverCPU = true
     var serverRAM = true
@@ -368,6 +382,7 @@ private struct SettingsDraft: Equatable {
             showServer: defaults.bool(forKey: Defaults.showServer),
             hoverExpand: defaults.bool(forKey: Defaults.hoverExpand),
             calmMotion: defaults.bool(forKey: Defaults.calmMotion),
+            startAtLogin: LaunchAtLogin.isRegistered,
             showBattery: defaults.bool(forKey: Defaults.showBattery),
             serverCPU: defaults.bool(forKey: Defaults.serverCPU),
             serverRAM: defaults.bool(forKey: Defaults.serverRAM),

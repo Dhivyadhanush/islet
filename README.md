@@ -104,12 +104,12 @@ on first launch.
 4. **Choose modules.** Settings → **Modules**: enable or disable any tab.
 5. **Connect Beszel.** Settings → **Server (Beszel)**: hub URL, read-only
    email/password, optional Cloudflare Access Client ID/Secret.
-6. **Tune the island.** Settings → **Behavior** (hover, battery, launch at
+6. **Tune the island.** Settings → **Behavior** (hover, battery, start at
    login) and **Motion** (calm animations).
 7. **Save your preferences.** Settings changes are drafted locally; press
    **Save** (⌘S) to apply them, or **Revert** to discard. Nothing changes in the
    island until you save.
-8. **Menu bar item:** show/hide, settings, launch at login, quit. While music
+8. **Menu bar item:** show/hide, settings, start at login, quit. While music
    plays, a small waveform chip appears just left of the notch; click it to
    open the Music tab.
 
@@ -248,7 +248,7 @@ connection.
 - Server metrics: CPU / RAM / Disk / Network checkboxes (only checked metrics
   show; the rest auto-fill the row). CPU/RAM/Disk include a percentage bar and
   a green/red online dot per system.
-- Behavior: expand on hover, battery in header, launch at login.
+- Behavior: expand on hover, battery in header, start at login.
 - Motion: Calm animations.
 - Network: today's total, live rate and a reset button.
 - Screen Time: today's total and a reset button.

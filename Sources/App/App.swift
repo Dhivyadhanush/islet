@@ -145,9 +145,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.target = self
         menu.addItem(settings)
 
-        let login = NSMenuItem(title: "Launch at Login", action: #selector(toggleLogin), keyEquivalent: "")
+        let login = NSMenuItem(title: "Start at Login", action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
-        login.state = LaunchAtLogin.isEnabled ? .on : .off
+        login.state = LaunchAtLogin.isRegistered ? .on : .off
         menu.addItem(login)
         loginItem = login
 
@@ -177,8 +177,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleLogin() {
         do {
-            try LaunchAtLogin.set(!LaunchAtLogin.isEnabled)
-            loginItem?.state = LaunchAtLogin.isEnabled ? .on : .off
+            try LaunchAtLogin.set(!LaunchAtLogin.isRegistered)
+            loginItem?.state = LaunchAtLogin.isRegistered ? .on : .off
         } catch {
             NSSound.beep()
         }

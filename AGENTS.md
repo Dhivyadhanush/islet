@@ -132,6 +132,12 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     panes use `@AppStorage`, so they update when Save lands. Revert reloads the
     stored values. Do not bind the toggles straight to `@AppStorage` again or
     changes will leak before saving.
+15. **Start at login.** `LaunchAtLogin` wraps `SMAppService.mainApp`.
+    `isRegistered` includes `.requiresApproval` so the toggle stays on while
+    macOS waits for the user in System Settings → General → Login Items.
+    Settings applies the change on Save; the menu-bar item toggles it
+    immediately. The bundle ID must stay `dev.dhanuz.islet` for the existing
+    login-item registration to survive a rename or rebuild.
 
 ## Release checklist
 
