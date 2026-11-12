@@ -53,7 +53,7 @@ struct SettingsView: View {
                 moduleRow(
                     icon: "server.rack",
                     title: "Server",
-                    subtitle: "Placeholder for your server-status integration",
+                    subtitle: "Beszel status, CPU, RAM, disk and network",
                     isOn: $draft.showServer
                 )
             } header: {
@@ -347,7 +347,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.0"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.1"
         return "v\(short)"
     }
 

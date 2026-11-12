@@ -12,6 +12,9 @@ final class MediaBridge {
     private var onFailure: (() -> Void)?
     private var stopping = false
     private var restarts = 0
+    /// One-shot command/seek helpers must stay referenced until they exit;
+    /// their run loop keeps MediaRemote alive long enough to deliver the call.
+    private var oneShots: [Process] = []
 
     var isRunning: Bool { process?.isRunning == true }
 
@@ -108,7 +111,17 @@ final class MediaBridge {
         task.arguments = [script.path, library.path, mode, argument]
         task.standardOutput = Pipe()
         task.standardError = Pipe()
-        try? task.run()
+        task.terminationHandler = { [weak self] finished in
+            DispatchQueue.main.async {
+                self?.oneShots.removeAll { $0 === finished }
+            }
+        }
+        do {
+            try task.run()
+            oneShots.append(task)
+        } catch {
+            // Nothing to recover: the next command tries again.
+        }
     }
 
     func stop() {
@@ -118,6 +131,10 @@ final class MediaBridge {
         process?.terminate()
         process = nil
         pipe = nil
+        for task in oneShots where task.isRunning {
+            task.terminate()
+        }
+        oneShots.removeAll()
     }
 
     deinit {

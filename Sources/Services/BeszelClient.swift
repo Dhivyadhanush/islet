@@ -8,33 +8,6 @@ struct BeszelConfig: Equatable {
     var accessClientSecret: String
 }
 
-struct BeszelMetrics: Equatable {
-    var id: String
-    var name: String
-    var hostname: String
-    var host: String
-    var status: String
-    var cpuPercent: Double
-    var memoryPercent: Double
-    var memoryUsedBytes: UInt64?
-    var memoryTotalBytes: UInt64?
-    var diskPercent: Double
-    var diskUsedGB: Double?
-    var diskTotalGB: Double?
-    var networkSentBytesPerSecond: Double
-    var networkReceivedBytesPerSecond: Double
-    var interfaces: [String]
-    var uptimeSeconds: Double
-    var cores: Int
-    var threads: Int
-    var model: String
-    var os: String
-    var updatedAt: Date
-
-    var isOnline: Bool { status == "up" }
-    var primaryInterface: String { interfaces.first ?? "" }
-}
-
 enum BeszelError: LocalizedError {
     case notConfigured
     case invalidURL
@@ -120,12 +93,8 @@ final class BeszelClient {
         token: String
     ) async -> BeszelMetrics {
         let systemID = string(system["id"])
-        let name = string(system["name"]).isEmpty ? "server" : string(system["name"])
-        let status = string(system["status"])
-        let host = string(system["host"])
-        let info = dictionary(system["info"])
 
-        var stats: [String: Any] = [:]
+        var latestRecord: [String: Any] = [:]
         if !systemID.isEmpty,
            let response = try? await getJSON(
                base: base,
@@ -140,88 +109,10 @@ final class BeszelClient {
            ),
            let records = response["items"] as? [[String: Any]],
            let latest = records.first {
-            stats = dictionary(latest["stats"])
+            latestRecord = latest
         }
 
-        let memoryPercent = number(info["mp"])
-        let diskPercent = number(info["dp"])
-
-        var memoryUsed: UInt64?
-        var memoryTotal: UInt64?
-        if let mem = stats["mem"] as? [Any], mem.count >= 2 {
-            memoryTotal = UInt64(max(number(mem[0]), 0))
-            memoryUsed = UInt64(max(number(mem[1]), 0))
-        }
-
-        var diskUsed: Double?
-        var diskTotal: Double?
-        if stats["d"] != nil {
-            diskTotal = number(stats["d"])
-            diskUsed = number(stats["du"])
-        }
-
-        let interfaces = interfaceList(stats["ni"])
-        let bandwidth = stats["b"] as? [Any] ?? []
-        let sent = bandwidth.count >= 2 ? number(bandwidth[0]) : 0
-        let received = bandwidth.count >= 2 ? number(bandwidth[1]) : 0
-
-        return BeszelMetrics(
-            id: systemID,
-            name: name,
-            hostname: string(info["h"]),
-            host: host,
-            status: status,
-            cpuPercent: number(info["cpu"]),
-            memoryPercent: memoryPercent,
-            memoryUsedBytes: memoryUsed,
-            memoryTotalBytes: memoryTotal,
-            diskPercent: diskPercent,
-            diskUsedGB: diskUsed,
-            diskTotalGB: diskTotal,
-            networkSentBytesPerSecond: sent,
-            networkReceivedBytesPerSecond: received,
-            interfaces: interfaces,
-            uptimeSeconds: number(info["u"]),
-            cores: Int(number(info["c"])),
-            threads: Int(number(info["t"])),
-            model: string(info["m"]),
-            os: string(info["o"]),
-            updatedAt: Date()
-        )
-    }
-
-    private func interfaceList(_ value: Any?) -> [String] {
-        guard let dictionary = value as? [String: Any] else { return [] }
-        var bestName = ""
-        var bestCurrent = -1.0
-        var bestTotalName = ""
-        var bestTotal = -1.0
-        var names: [String] = []
-
-        for (name, raw) in dictionary {
-            guard name != "lo" else { continue }
-            names.append(name)
-            if let counters = raw as? [Any], counters.count >= 4 {
-                let current = number(counters[0]) + number(counters[1])
-                let total = number(counters[2]) + number(counters[3])
-                if current > bestCurrent {
-                    bestCurrent = current
-                    bestName = name
-                }
-                if total > bestTotal {
-                    bestTotal = total
-                    bestTotalName = name
-                }
-            }
-        }
-
-        if bestCurrent <= 0 { bestName = bestTotalName }
-        names.sort()
-        if let index = names.firstIndex(of: bestName) {
-            names.remove(at: index)
-            names.insert(bestName, at: 0)
-        }
-        return names
+        return BeszelParsing.metrics(system: system, statsRecord: latestRecord)
     }
 
     private func authToken(base: URL, config: BeszelConfig, force: Bool) async throws -> String {
@@ -315,27 +206,10 @@ final class BeszelClient {
         return string(json["message"])
     }
 
-    private func dictionary(_ value: Any?) -> [String: Any] {
-        if let dictionary = value as? [String: Any] { return dictionary }
-        if let text = value as? String,
-           let data = text.data(using: .utf8),
-           let dictionary = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            return dictionary
-        }
-        return [:]
-    }
-
     private func string(_ value: Any?) -> String {
         if let text = value as? String { return text }
         if let text = value as? NSString { return text as String }
         return ""
     }
 
-    private func number(_ value: Any?) -> Double {
-        if let number = value as? NSNumber { return number.doubleValue }
-        if let number = value as? Double { return number }
-        if let number = value as? Int { return Double(number) }
-        if let text = value as? String { return Double(text) ?? 0 }
-        return 0
-    }
 }

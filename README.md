@@ -24,10 +24,11 @@ disappears into the notch; hover the notch to open it.
   browser media session does not keep the player or the chip visible after the
   sound stops.
 - **Now-playing chip beside the notch.** While audio is playing, a small black
-  chip with a live bar waveform sits in the menu bar immediately left of the
-  notch. Click it to open the Music tab; it disappears when playback stops or
-  the island expands. macOS does not allow third-party status items left of the
-  notch, so the chip is drawn by the island at status-bar level.
+  chip with the cover thumbnail and a live bar waveform sits in the menu bar
+  immediately left of the notch. Click it to open the Music tab; it disappears
+  when playback stops or the island expands. macOS does not allow third-party
+  status items left of the notch, so the chip is drawn by the island at
+  status-bar level.
 - **Network data on hover.** Today's download/upload total, a live rate and a
   seven-day chart — in the expanded card only, so the collapsed notch stays
   clean.
@@ -156,6 +157,10 @@ loaded by the Apple-signed `/usr/bin/perl`) that reads the system's now-playing
 dictionary and streams it to the app. That is why browser playback now shows up.
 
 - No network access, no analytics, no automation permission in the normal path.
+- Artwork and its accent colour follow the system's now-playing data. Browsers
+  fetch Media Session artwork asynchronously, so islet keeps polling until the
+  cover arrives instead of only reading it on the first metadata update. A
+  greyscale cover has no hue to sample, so the player falls back to white.
 - If a site does not publish Media Session metadata, macOS Control Center will
   not show it either, and islet cannot invent it. Normal audio/video on Safari,
   Chrome, Brave, Arc and Firefox does publish it.
@@ -200,6 +205,25 @@ BESZEL_PASSWORD='…' \
 If Cloudflare Access is on, add `CF_ACCESS_CLIENT_ID` and
 `CF_ACCESS_CLIENT_SECRET` to that command.
 
+To configure the installed app without opening Settings, use
+`--beszel-save`. Prefer the environment or stdin so the password never appears
+in the process list or your shell history:
+
+```bash
+BESZEL_URL=https://beszel.dhanush-vijay.uk \
+BESZEL_EMAIL=you@example.com \
+BESZEL_PASSWORD='…' \
+./build/islet.app/Contents/MacOS/islet --beszel-save
+
+printf '%s' '…' | ./build/islet.app/Contents/MacOS/islet --beszel-save \
+  --beszel-url https://beszel.dhanush-vijay.uk \
+  --beszel-email you@example.com \
+  --beszel-password-stdin
+```
+
+The older `--beszel-password` argument still works but prints a warning because
+argv is visible to other local processes.
+
 API used: `POST /api/collections/users/auth-with-password`,
 `GET /api/collections/systems/records`,
 `GET /api/collections/system_stats/records`. The password and Access secret are
@@ -234,15 +258,30 @@ for the full effect (on other displays islet becomes a floating pill).
 ```bash
 git clone https://github.com/dhivyadhanush/islet.git
 cd islet
-./build.sh
+./build.sh                 # native architecture
 open build/islet.app
+
+ARCHS="arm64 x86_64" ./build.sh   # universal binary
+Tests/run.sh                      # pure logic tests, no GUI required
+MAKE_DMG=1 ./build.sh             # adds build/islet-<version>.dmg
 ```
 
-Universal binary:
+`build.sh` keeps the previous DMG; it refuses to overwrite one unless
+`OVERWRITE_DMG=1` is set. The version comes from the latest `v*` tag or
+`VERSION=…`.
+
+A Developer ID build signs with the hardened runtime and can notarize the DMG.
+Create the notary profile once with
+`xcrun notarytool store-credentials islet-notary …`, then:
 
 ```bash
-ARCHS="arm64 x86_64" ./build.sh
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE=islet-notary \
+ARCHS="arm64 x86_64" MAKE_DMG=1 ./build.sh
 ```
+
+Without `SIGN_IDENTITY` the build is ad-hoc signed, which is fine locally but
+leaves the Gatekeeper warning on other Macs.
 
 Useful diagnostics:
 
@@ -252,14 +291,21 @@ Useful diagnostics:
 ./build/islet.app/Contents/MacOS/islet --beszel-test
 ```
 
-`--snapshot` renders the island offscreen to PNGs, which is how the images above
-were produced.
+`--diagnose` prints the sampled artwork size and the accent colour derived from
+it, so browser artwork can be checked without a screenshot. `--snapshot`
+renders the island offscreen to PNGs, which is how the images above were
+produced.
+
+CI runs the tests, the build and the snapshot renderer on every push
+(`.github/workflows/ci.yml`); a `v*` tag builds a universal DMG and can update
+the Homebrew tap when `TAP_GITHUB_TOKEN` is configured
+(`.github/workflows/release.yml`).
 
 ## Permissions
 
 | Feature | Permission |
 | --- | --- |
-| Music / browser media | None (system now-playing service) |
+| Music / browser media | None in the normal path (system now-playing service); Automation only if the AppleScript fallback runs |
 | Network | None (kernel interface counters) |
 | Screen Time | None (local frontmost-app tracker) |
 | Server status | Beszel read-only login (+ optional Cloudflare Access service token) |
@@ -294,7 +340,8 @@ connection.
 - **Screen Time is a local estimate.** macOS does not expose system Screen Time
   totals to third-party apps without Full Disk Access or a DeviceActivity report
   extension. islet tracks the frontmost app while it runs and excludes idle and
-  sleep time; it does not include usage before islet launched.
+  sleep time; audio output keeps passive media playback counted. It does not
+  include usage before islet launched.
 - **Server status needs Beszel.** Configure a read-only Beszel user; until then
   the Server tab shows a setup prompt. If Cloudflare Access is enabled, the app
   also needs an Access service token.
@@ -303,8 +350,8 @@ connection.
   signal instead. Toggling Wi-Fi itself needs no permission.
 - **Bluetooth connect depends on the device.** A paired device must be awake and
   in range; macOS may also ask for Bluetooth access the first time.
-- The app is ad-hoc signed. A Developer ID build would remove the Gatekeeper
-  warning; the source is here if you want to sign it yourself.
+- Release builds are ad-hoc signed. A Developer ID + notarized build removes the
+  Gatekeeper warning; `build.sh` supports it, but it needs your own certificate.
 - Calendar access is read-only.
 
 ## Architecture
@@ -319,15 +366,27 @@ SwiftUI island (NSPanel, .statusBar, non-activating)
 │   ├── ConnectivityPane Wi-Fi power/address + Bluetooth power/devices
 │   ├── CalendarPane   EventKit + meeting-link Join
 │   └── ServerPane     Beszel status + CPU/RAM/disk/uptime
-└── Services           NowPlaying, AudioActivity, NetworkMonitor,
-                       ScreenTimeService, ConnectivityService, CalendarService,
-                       BatteryMonitor, ServerStatusService, BeszelClient,
-                       CredentialStore, MediaBridge
+├── Services           NowPlaying, AudioActivity, NetworkMonitor,
+│                      ScreenTimeService, ConnectivityService, CalendarService,
+│                      BatteryMonitor, ServerStatusService, BeszelClient,
+│                      BeszelParsing, CredentialStore, MediaBridge
+└── Tests              pure formatters + Beszel sample parsing (Tests/run.sh)
 ```
+
+`BeszelParsing` is deliberately free of URLSession and AppKit so the metrics
+mapping can be unit-tested. The GitHub workflows build the app and render the
+snapshots on every push.
 
 The collapsed window is exactly the notch plus a 10 pt transparent hover margin.
 The expanded window keeps the top edge flush and adds 10 pt of transparent room
 on each side and below so the spring overshoot is never clipped.
+
+## Security
+
+islet keeps credentials in a 0600 file under Application Support, makes no
+analytics calls, and only contacts the Beszel hub you configure. Report
+sensitive issues privately using the Security tab (see `SECURITY.md`). Release
+changes are listed in `CHANGELOG.md`.
 
 ## Credits
 

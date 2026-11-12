@@ -24,11 +24,6 @@ final class CalendarService: ObservableObject {
     private var timer: Timer?
     private var observer: NSObjectProtocol?
 
-    var nextEvent: EventItem? {
-        let now = Date()
-        return events.first { $0.end > now }
-    }
-
     func start() {
         status = EKEventStore.authorizationStatus(for: .event)
         observer = NotificationCenter.default.addObserver(

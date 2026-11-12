@@ -15,7 +15,7 @@ final class NowPlayingChipController {
     private let panel: IslandPanel
     private var screenObserver: NSObjectProtocol?
 
-    private static let size = CGSize(width: 52, height: 24)
+    private static let size = CGSize(width: 70, height: 24)
 
     init(state: IslandState, nowPlaying: NowPlaying) {
         self.state = state
@@ -101,26 +101,45 @@ private struct NowPlayingChipView: View {
 
     var body: some View {
         if let track = nowPlaying.track {
-            PlayingWaveform(active: track.isPlaying, color: .white)
-                .frame(width: 36, height: 18)
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(Color.black)
-                )
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
-                }
-                .contentShape(Capsule(style: .continuous))
-                .onTapGesture {
-                    state.tab = .music
-                    state.onExpandNow?()
-                }
-                .help(track.artist.isEmpty ? track.title : "\(track.title) — \(track.artist)")
+            HStack(spacing: 5) {
+                artwork(track.artwork)
+                PlayingWaveform(active: track.isPlaying, color: .white)
+                    .frame(width: 26, height: 18)
+            }
+            .padding(.horizontal, 7)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.black)
+            )
+            .overlay {
+                Capsule(style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+            }
+            .contentShape(Capsule(style: .continuous))
+            .onTapGesture {
+                state.tab = .music
+                state.onExpandNow?()
+            }
+            .help(track.artist.isEmpty ? track.title : "\(track.title) — \(track.artist)")
         } else {
             Color.clear
+        }
+    }
+
+    @ViewBuilder
+    private func artwork(_ image: NSImage?) -> some View {
+        if let image {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 16, height: 16)
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        } else {
+            Image(systemName: "music.note")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(Theme.secondary)
+                .frame(width: 16, height: 16)
         }
     }
 }

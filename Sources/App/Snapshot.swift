@@ -54,7 +54,6 @@ enum Snapshot {
         screenTime.previewSeed(
             total: 2 * 3600 + 22 * 60,
             apps: sampleApps(),
-            hourly: sampleHours(),
             since: Date().addingTimeInterval(-3 * 3600)
         )
 
@@ -244,16 +243,6 @@ enum Snapshot {
                 icon: NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: nil)
             ),
         ]
-    }
-
-    private static func sampleHours() -> [Double] {
-        var hours = Array(repeating: 0.0, count: 24)
-        let now = Calendar.current.component(.hour, from: Date())
-        for offset in 0..<4 {
-            let hour = (now - offset + 24) % 24
-            hours[hour] = Double(600 + offset * 900)
-        }
-        return hours
     }
 
     private static func sampleEvents() -> [CalendarService.EventItem] {

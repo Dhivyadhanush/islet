@@ -48,32 +48,54 @@ struct ServerPane: View {
 
     private var systemList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(server.systems.enumerated()), id: \.element.id) { index, system in
-                systemRow(system)
-                    .frame(maxHeight: .infinity)
-                if index < server.systems.count - 1 {
-                    IslandDivider()
-                        .padding(.vertical, 2)
+            if server.systems.count > 2 {
+                // The pane height is fixed, so many systems scroll instead of
+                // clipping. One or two systems still share the height evenly.
+                ScrollView(.vertical, showsIndicators: false) {
+                    systemRows
                 }
+            } else {
+                systemRows
             }
 
-            HStack(spacing: 4) {
-                if let error = server.lastError, !error.isEmpty {
-                    Text(error)
-                        .lineLimit(1)
-                } else {
-                    Text("updated \(TimeText.short(server.lastUpdated ?? Date()))")
-                    if server.isRefreshing {
-                        Text("· updating…")
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .font(.system(size: 8))
-            .foregroundStyle(Theme.tertiary)
-            .padding(.top, 4)
+            footer
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private var systemRows: some View {
+        ForEach(Array(server.systems.enumerated()), id: \.element.id) { index, system in
+            systemRow(system)
+                .frame(maxHeight: .infinity)
+            if index < server.systems.count - 1 {
+                IslandDivider()
+                    .padding(.vertical, 2)
+            }
+        }
+    }
+
+    private var footer: some View {
+        HStack(spacing: 4) {
+            if let error = server.lastError, !error.isEmpty {
+                Text(error)
+                    .lineLimit(1)
+            } else {
+                Text("sample \(TimeText.short(sampleTime ?? Date()))")
+                if server.isRefreshing {
+                    Text("· updating…")
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 8))
+        .foregroundStyle(Theme.tertiary)
+        .padding(.top, 4)
+    }
+
+    /// Newest Beszel sample across all systems, not the time of the fetch.
+    private var sampleTime: Date? {
+        server.systems.map(\.updatedAt).max()
     }
 
     private func systemRow(_ system: BeszelMetrics) -> some View {

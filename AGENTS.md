@@ -5,16 +5,22 @@ Notes for anyone (human or agent) changing islet.
 ## Build and verify
 
 ```bash
+Tests/run.sh                                # pure logic tests, no GUI
 ./build.sh                                  # native arch
 ARCHS="arm64 x86_64" ./build.sh             # universal
+MAKE_DMG=1 ./build.sh                       # build/islet-<version>.dmg
 ./build/islet.app/Contents/MacOS/islet --diagnose
 ./build/islet.app/Contents/MacOS/islet --snapshot build/snapshots
 ./build/islet.app/Contents/MacOS/islet --beszel-test
 ```
 
+- `Tests/run.sh` compiles `Defaults.swift` + `BeszelParsing.swift` with a small
+  assert runner. Anything that needs AppKit, SwiftUI or a window belongs in the
+  snapshot/`--diagnose` path instead.
 - `--diagnose` starts the services, waits 3 s, prints network/screen time/
-  Wi-Fi/Bluetooth/media/battery/server/calendar state, then exits. Use it to verify
-  the media helper.
+  Wi-Fi/Bluetooth/media/artwork/battery/server/calendar state, then exits. The
+  `artwork` line prints the cover size and the accent colour derived from it.
+  Use it to verify the media helper and browser artwork.
 - `--snapshot` renders every island state offscreen with sample data. It needs no
   Screen Recording permission. The PNGs in `docs/` come from this.
 - Screen capture is often blocked by TCC; use snapshots instead of
@@ -36,7 +42,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/Island/NowPlayingChip.swift` | Waveform chip left of the notch |
 | `Sources/Island/Panes/*` | Music, network, screen time, connectivity, calendar, server |
 | `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, Beszel |
+| `Sources/Services/BeszelParsing.swift` | Pure Beszel metrics/date/interface mapping (no URLSession) |
 | `Sources/Design/ArtworkPalette.swift` | Accent colour sampled from album art |
+| `Tests/` | Pure logic tests (`Tests/run.sh`) |
+| `.github/workflows/` | CI build + tagged release |
 | `Sources/Services/AudioActivity.swift` | CoreAudio per-process output check |
 | `Sources/Media/IsletMedia.m` | Objective-C dylib loaded by perl |
 | `Sources/Media/islet-media.pl` | Loader/stream entry point |
@@ -56,8 +65,14 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
    from the app — browser media will silently disappear.
 3. **The helper is a long-lived child process.** `MediaBridge` reads JSON lines
    from stdout. It restarts up to five times, then falls back to the legacy API.
-   `NowPlaying.stop()` terminates it on quit. Artwork is sent only when the
-   content identifier changes; the app caches it.
+   `NowPlaying.stop()` terminates it on quit. Browsers fetch Media Session
+   artwork asynchronously, so the helper compares the artwork payload
+   fingerprint (length ^ hash), not just the track identifier. Comparing only
+   the identifier drops a cover that arrives one or two polls after the title.
+   The app caches artwork by identifier. One-shot `command`/`seek` helpers pump
+   the run loop for 0.8 s inside the dylib; without that MediaRemote drops the
+   command because perl exits immediately. `MediaBridge` retains each one-shot
+   `Process` until it terminates.
 4. **Window geometry and tab wings.** The collapsed island is exactly the notch
    silhouette (square top, 12 pt bottom radius) so it disappears into the cutout.
    The expanded card is 620 pt wide: the tab strip is split 3/3 into the
@@ -91,7 +106,12 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     Application Support (Keychain ACLs do not survive ad-hoc rebuilds).
     Cloudflare Access service-token
     headers are supported. `--beszel-test` reads `BESZEL_URL`, `BESZEL_EMAIL`,
-    `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`. The
+    `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`.
+    `--beszel-save` accepts the same names as environment variables, or
+    `--beszel-password-stdin`; avoid `--beszel-password` because argv is visible
+    to local processes. `BeszelParsing` is pure and tested by `Tests/run.sh`.
+    A system's `updatedAt` is the Beszel sample's `created` timestamp, not the
+    fetch time, so an offline row shows how stale it is. The
     `NSAllowsLocalNetworking` ATS key permits local/tunnel HTTP for testing.
     `--beszel-save` writes the same config headlessly; it creates the 0600
     credentials file and can be run from any copy of the app.
@@ -111,23 +131,25 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 11. **Ad-hoc signing.** The app and the helper dylib are signed `-`. Rebuilding
     can reset TCC prompts; that is expected in development.
 12. **Music accent + wave.** `ArtworkPalette` samples a 12×12 bitmap of the
-    cover, weights saturated pixels, then clamps saturation/brightness so the
-    hue stays legible on black. It caches by `ObjectIdentifier(NSImage)`, and
-    `MusicPane` falls back to white when there is no artwork. The pane's
-    `PlayingWaveform` is a `TimelineView` + `Canvas` row of rounded bars (bar
-    width 2, gap 1.8, heights driven by per-bar sine phases and an envelope);
-    `active` freezes it when paused. Do not sample artwork on every frame
-    without that cache.
+    cover, finds the dominant hue bucket (a plain RGB average mixes
+    complementary colours into grey), then clamps saturation/brightness so the
+    hue stays legible on black. It caches by `ObjectIdentifier(NSImage)` and
+    verifies the cached image identity, because addresses can be reused. A
+    genuinely greyscale cover returns nil and `MusicPane` falls back to white.
+    The pane's `PlayingWaveform` is a `TimelineView` + `Canvas` row of rounded
+    bars (bar width 2, gap 1.8, heights driven by per-bar sine phases and an
+    envelope); `active` freezes it when paused. Do not sample artwork on every
+    frame without that cache.
 13. **Now-playing chip left of the notch.** `NSStatusBar` only accepts items to
     the right of the notch, so `NowPlayingChipController` uses a second
-    borderless `IslandPanel` at `.statusBar` level, positioned at
-    `notchLeft - 52 - 6` and vertically centred in the menu bar. It hosts a
-    white `PlayingWaveform` inside a black capsule (no artwork) and is shown
-    only when `track.isPlaying`,
-    the island is visible and `state.expanded` is false; `AppDelegate` refreshes
-    it from `NowPlaying.$track` and `IslandState.$expanded`. Clicking it selects
-    the Music tab and calls `state.onExpandNow`. Do not add a status item for
-    this; it cannot sit left of the notch.
+    borderless `IslandPanel` at `.statusBar` level, 70×24 pt, positioned 6 pt
+    left of the notch and vertically centred in the menu bar. It hosts a 16 pt
+    cover thumbnail (or a music-note glyph) plus a white `PlayingWaveform`
+    inside a black capsule, and is shown only when `track.isPlaying`, the island
+    is visible and `state.expanded` is false; `AppDelegate` refreshes it from
+    `NowPlaying.$track` and `IslandState.$expanded`. Clicking it selects the
+    Music tab and calls `state.onExpandNow`. Do not add a status item for this;
+    it cannot sit left of the notch.
 14. **Settings are explicit-save.** `SettingsView` edits a `SettingsDraft` in
     `@State`; only the Save button (⌘S) writes `UserDefaults`. The island and
     panes use `@AppStorage`, so they update when Save lands. Save closes the
@@ -141,7 +163,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     PID or a process whose bundle ID has the app's bundle ID as a prefix, so
     Chromium/Firefox helper processes count. `nil` means unknown (older macOS or
     no audio client) and leaves the rate alone. Do not gate this on elapsed
-    time; browsers often stop updating it.
+    time; browsers often stop updating it. The helper and the legacy poller have
+    separate miss counters: legacy must never clear a track the helper owns, and
+    it stops as soon as a helper line arrives. `AudioActivity.isAnyOutputRunning()`
+    also keeps Screen Time from discarding passive media as idle time.
 16. **Start at login.** `LaunchAtLogin` wraps `SMAppService.mainApp`.
     `isRegistered` includes `.requiresApproval` so the toggle stays on while
     macOS waits for the user in System Settings → General → Login Items.
@@ -153,20 +178,35 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     RSSI, and IOBluetooth for paired devices. `ssid()` is normally nil without
     Location permission, so the pane shows the IPv4 address and dBm instead.
     Bluetooth power uses the private
-    `IOBluetoothPreferenceGet/SetControllerPowerState` symbols through
-    `@_silgen_name` (still exported by IOBluetooth); devices connect with
-    `IOBluetoothDevice.openConnection()`. The module keeps the
-    `Defaults.showControls` key so existing preferences survive the rename to
-    Connectivity.
+    `IOBluetoothPreferenceGet/SetControllerPowerState` symbols, resolved with
+    `dlsym` rather than `@_silgen_name`: a missing symbol then disables the
+    Bluetooth section instead of preventing islet from launching. Devices
+    connect with `IOBluetoothDevice.openConnection()`, whose return code is
+    surfaced as an error. The module keeps the `Defaults.showControls` key so
+    existing preferences survive the rename to Connectivity.
+18. **Secrets.** `--beszel-save` reads `BESZEL_URL`, `BESZEL_EMAIL`,
+    `BESZEL_PASSWORD`, `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` from
+    the environment, or `--beszel-password-stdin`. `--beszel-password` still
+    works but warns: argv is visible to other local processes. Never add the
+    password to logs or release notes.
+19. **Tests and CI.** `Tests/run.sh` builds the pure sources with a small
+    assert runner. Keep `BeszelParsing` free of AppKit/URLSession so it stays
+    testable. CI runs the tests, `build.sh` and `--snapshot`; a `v*` tag runs
+    `release.yml`, which builds the universal DMG and updates the tap when
+    `TAP_GITHUB_TOKEN` exists. Do not change `build.sh` to wipe `build/`: it
+    keeps the previous DMG and refuses to overwrite one without
+    `OVERWRITE_DMG=1`.
 
 ## Release checklist
 
-1. Bump `VERSION` in `build.sh` (and the Settings fallback version if needed).
-2. `ARCHS="arm64 x86_64" ./build.sh`
-3. `./build/islet.app/Contents/MacOS/islet --snapshot build/snapshots`
-   and update `docs/preview-*.png`.
-4. Build the DMG:
-   `hdiutil create -volname "islet" -srcfolder build/dmg -ov -format UDZO build/islet-$VERSION.dmg`
-5. `gh release create v$VERSION build/islet-$VERSION.dmg`
-6. Update `Casks/islet.rb` in the `homebrew-islet` tap with the new version
-   and `shasum -a 256` of the DMG.
+1. Run `Tests/run.sh` and `./build.sh`.
+2. Render snapshots and commit the updated `docs/preview-*.png`:
+   `./build/islet.app/Contents/MacOS/islet --snapshot build/snapshots`.
+3. Tag and push: `git tag v$VERSION && git push origin main --tags`.
+   The `Release` workflow derives the version from the tag, builds the universal
+   DMG, publishes it and (with `TAP_GITHUB_TOKEN`) updates the cask.
+4. To build a release locally instead:
+   `ARCHS="arm64 x86_64" MAKE_DMG=1 ./build.sh`, then
+   `gh release create v$VERSION build/islet-$VERSION.dmg --generate-notes`.
+5. If the tap was not updated automatically, set `version` and the
+   `shasum -a 256` of the DMG in `Casks/islet.rb` and push the tap.

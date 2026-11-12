@@ -44,7 +44,8 @@ final class NowPlaying: ObservableObject {
     private var tickTimer: Timer?
     private var legacyTimer: Timer?
     private var lastSync: Date?
-    private var misses = 0
+    private var helperMisses = 0
+    private var legacyMisses = 0
     private var artworkCache: [String: NSImage] = [:]
     private var legacyStarted = false
     private var lastLineAt: Date?
@@ -147,13 +148,20 @@ final class NowPlaying: ObservableObject {
 
         let title = string(info["kMRMediaRemoteNowPlayingInfoTitle"])
         guard !title.isEmpty else {
-            misses += 1
-            if misses >= 3 {
+            helperMisses += 1
+            if helperMisses >= 3, legacyTimer == nil {
                 track = nil
                 position = 0
                 silentChecks = 0
             }
             return
+        }
+
+        // The helper is authoritative once it has a real track. If it recovers
+        // after a legacy fallback started, stop the legacy poller so the two
+        // sources cannot fight.
+        if legacyTimer != nil {
+            stopLegacy()
         }
 
         let artist = string(info["kMRMediaRemoteNowPlayingInfoArtist"])
@@ -235,7 +243,7 @@ final class NowPlaying: ObservableObject {
         }
         position = elapsed
         lastSync = timestamp > 1 ? Date(timeIntervalSince1970: timestamp) : Date()
-        misses = 0
+        helperMisses = 0
     }
 
     // MARK: - Legacy fallback
@@ -253,6 +261,14 @@ final class NowPlaying: ObservableObject {
         legacyTimer = poll
     }
 
+    private func stopLegacy() {
+        legacyTimer?.invalidate()
+        legacyTimer = nil
+        legacyStarted = false
+        legacyMisses = 0
+        usingFallback = false
+    }
+
     private func refresh() {
         guard let getInfo = MediaRemote.getInfo else {
             fallbackIfNeeded()
@@ -263,11 +279,15 @@ final class NowPlaying: ObservableObject {
             if let dictionary = info as? [String: Any], !dictionary.isEmpty {
                 self.consumeLegacy(dictionary)
             } else {
-                self.misses += 1
-                if self.misses >= 3 {
-                    self.track = nil
-                    self.silentChecks = 0
-                    self.position = 0
+                self.legacyMisses += 1
+                if self.legacyMisses >= 3 {
+                    // On macOS 15.4+ this API returns empty for ordinary
+                    // processes; never let it clear a track the helper owns.
+                    if !self.bridgeActive {
+                        self.track = nil
+                        self.silentChecks = 0
+                        self.position = 0
+                    }
                     self.fallbackIfNeeded()
                 }
             }
@@ -302,7 +322,7 @@ final class NowPlaying: ObservableObject {
         )
         position = elapsed
         lastSync = Date()
-        misses = 0
+        legacyMisses = 0
     }
 
     private func fallbackIfNeeded() {

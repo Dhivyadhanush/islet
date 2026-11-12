@@ -22,13 +22,11 @@ final class ServerStatusService: ObservableObject {
         var email: String
         var accessClientID: String
         var hasPassword: Bool
-        var hasAccessSecret: Bool
     }
 
     @Published private(set) var status: Status = .notConfigured
     @Published private(set) var systems: [BeszelMetrics] = []
     @Published private(set) var lastError: String?
-    @Published private(set) var lastUpdated: Date?
     @Published private(set) var isRefreshing = false
 
     private let client = BeszelClient()
@@ -46,8 +44,7 @@ final class ServerStatusService: ObservableObject {
             baseURL: defaults.string(forKey: Keys.url) ?? "",
             email: defaults.string(forKey: Keys.email) ?? "",
             accessClientID: defaults.string(forKey: Keys.accessID) ?? "",
-            hasPassword: !(CredentialStore.load()?.password ?? "").isEmpty,
-            hasAccessSecret: !(CredentialStore.load()?.accessSecret ?? "").isEmpty
+            hasPassword: !(CredentialStore.load()?.password ?? "").isEmpty
         )
     }
 
@@ -76,10 +73,6 @@ final class ServerStatusService: ObservableObject {
         timer = nil
     }
 
-    func check() {
-        refresh()
-    }
-
     func refresh() {
         guard !isRefreshing else { return }
         guard let config = currentConfig() else {
@@ -96,7 +89,6 @@ final class ServerStatusService: ObservableObject {
                 let fetched = try await client.fetch(config: config)
                 systems = fetched
                 lastError = nil
-                lastUpdated = Date()
                 status = fetched.contains(where: \.isOnline) ? .online : .offline
             } catch {
                 lastError = error.localizedDescription
@@ -153,14 +145,12 @@ final class ServerStatusService: ObservableObject {
         CredentialStore.clear()
         systems = []
         lastError = nil
-        lastUpdated = nil
         status = .notConfigured
     }
 
     /// Used by `--snapshot` to render the online dashboard.
     func previewSeed(systems: [BeszelMetrics]) {
         self.systems = systems
-        lastUpdated = systems.first?.updatedAt ?? Date()
         status = systems.contains(where: \.isOnline) ? .online : .offline
     }
 

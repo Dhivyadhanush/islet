@@ -97,22 +97,26 @@ struct ConnectivityPane: View {
     @ViewBuilder
     private var deviceList: some View {
         if connectivity.bluetoothPower, !connectivity.bluetoothDevices.isEmpty {
-            let shown = Array(connectivity.bluetoothDevices.prefix(3))
-            VStack(spacing: 3) {
-                ForEach(shown) { device in
-                    deviceRow(device)
+            if connectivity.bluetoothDevices.count <= 3 {
+                deviceRows
+            } else {
+                // The pane has a fixed height, so long paired-device lists
+                // scroll instead of clipping or hiding devices.
+                ScrollView(.vertical, showsIndicators: false) {
+                    deviceRows
                 }
-                if connectivity.bluetoothDevices.count > shown.count {
-                    HStack {
-                        Text("+\(connectivity.bluetoothDevices.count - shown.count) more paired")
-                            .font(.system(size: 8.5))
-                            .foregroundStyle(Theme.tertiary)
-                        Spacer()
-                    }
-                }
+                .frame(maxHeight: 96)
             }
-            .padding(.top, 1)
         }
+    }
+
+    private var deviceRows: some View {
+        VStack(spacing: 3) {
+            ForEach(connectivity.bluetoothDevices) { device in
+                deviceRow(device)
+            }
+        }
+        .padding(.top, 1)
     }
 
     private func deviceRow(_ device: ConnectivityService.BluetoothDevice) -> some View {

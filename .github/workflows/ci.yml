@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Pure logic tests
+        run: bash Tests/run.sh
+
+      - name: Build (native arch)
+        run: bash build.sh
+
+      - name: Smoke test
+        run: ./build/islet.app/Contents/MacOS/islet --version
+
+      - name: Render snapshots
+        continue-on-error: true
+        run: ./build/islet.app/Contents/MacOS/islet --snapshot build/snapshots
+
+      - name: Upload snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshots
+          path: build/snapshots
+          if-no-files-found: ignore

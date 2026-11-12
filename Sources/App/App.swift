@@ -73,6 +73,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 print("bluetooth \(self.connectivity.bluetoothPower ? "on, \(connectedDevices) connected, \(self.connectivity.bluetoothDevices.count) paired" : "off")")
                 if let track = self.nowPlaying.track {
                     print("music    \(track.title) — \(track.artist) [\(track.isPlaying ? "playing" : "paused")] \(track.source)")
+                    let artwork = track.artwork.map {
+                        "\(Int($0.size.width))×\(Int($0.size.height))"
+                    } ?? "none"
+                    print("artwork  \(artwork), accent \(Self.describeAccent(ArtworkPalette.accent(for: track.artwork)))")
                 } else {
                     print("music    nothing playing")
                 }
@@ -98,6 +102,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         nowPlaying.stop()
         server.stop()
         connectivity.stop()
+    }
+
+    /// `--diagnose` prints the sampled artwork and the accent islet derives from
+    /// it, so browser artwork problems are visible without a screenshot.
+    private static func describeAccent(_ colour: Color?) -> String {
+        guard let colour,
+              let rgb = NSColor(colour).usingColorSpace(.sRGB)
+        else { return "none" }
+        return String(
+            format: "#%02X%02X%02X",
+            Int((rgb.redComponent * 255).rounded()),
+            Int((rgb.greenComponent * 255).rounded()),
+            Int((rgb.blueComponent * 255).rounded())
+        )
     }
 
     // MARK: - Now-playing chip
@@ -205,16 +223,31 @@ struct IsletMain {
 
         if CommandLine.arguments.contains("--beszel-save") {
             let args = CommandLine.arguments
-            func value(_ name: String) -> String {
-                guard let index = args.firstIndex(of: name), args.count > index + 1 else { return "" }
-                return args[index + 1]
+            let environment = ProcessInfo.processInfo.environment
+
+            func value(_ name: String, env key: String) -> String {
+                if let index = args.firstIndex(of: name), args.count > index + 1 {
+                    return args[index + 1]
+                }
+                return environment[key] ?? ""
             }
+
+            var password = value("--beszel-password", env: "BESZEL_PASSWORD")
+            if args.contains("--beszel-password-stdin") {
+                password = readLine() ?? ""
+            }
+            if args.contains("--beszel-password") {
+                FileHandle.standardError.write(Data(
+                    "warning: --beszel-password is visible in process listings; use BESZEL_PASSWORD or --beszel-password-stdin.\n".utf8
+                ))
+            }
+
             ServerStatusService.saveConfig(
-                baseURL: value("--beszel-url"),
-                email: value("--beszel-email"),
-                password: value("--beszel-password"),
-                accessClientID: value("--beszel-access-id"),
-                accessClientSecret: value("--beszel-access-secret")
+                baseURL: value("--beszel-url", env: "BESZEL_URL"),
+                email: value("--beszel-email", env: "BESZEL_EMAIL"),
+                password: password,
+                accessClientID: value("--beszel-access-id", env: "CF_ACCESS_CLIENT_ID"),
+                accessClientSecret: value("--beszel-access-secret", env: "CF_ACCESS_CLIENT_SECRET")
             )
             print("beszel config saved")
             exit(0)

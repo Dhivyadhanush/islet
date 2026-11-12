@@ -50,6 +50,7 @@ final class NetworkMonitor: ObservableObject {
         guard timer == nil else { return }
         load()
         currentDay = Self.key(for: Date())
+        prune()
         sample(isInitial: true)
         rebuildHistory()
 
@@ -70,6 +71,10 @@ final class NetworkMonitor: ObservableObject {
         rate = 0
         archive.removeAll()
         currentDay = Self.key(for: Date())
+        // Re-baseline the kernel counters so the reset does not immediately
+        // re-add traffic from the last sampling window.
+        lastCounters = Self.readCounters()
+        lastSample = Date()
         persist()
         rebuildHistory()
     }

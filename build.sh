@@ -4,13 +4,25 @@ cd "$(dirname "$0")"
 
 APP="build/islet.app"
 EXEC="islet"
-VERSION="${VERSION:-1.1.0}"
 BUILD="${BUILD:-1}"
-# ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+MAKE_DMG="${MAKE_DMG:-0}"
+DMG_DIR="${DMG_DIR:-build}"
+OVERWRITE_DMG="${OVERWRITE_DMG:-0}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 
-rm -rf build
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+# Use the latest release tag when VERSION is not supplied, so a tagged release
+# built in CI cannot accidentally ship the previous version number.
+if [ -z "${VERSION:-}" ]; then
+  VERSION="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+  VERSION="${VERSION#v}"
+fi
+VERSION="${VERSION:-1.1.0}"
+
+rm -rf "$APP"
+rm -f build/"$EXEC"-*
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$DMG_DIR"
 
 SOURCES=$(find Sources -name '*.swift' | sort)
 
@@ -65,7 +77,6 @@ if [ -f Sources/Media/IsletMedia.m ]; then
     -o "$APP/Contents/Resources/IsletMedia.dylib"
   cp Sources/Media/islet-media.pl "$APP/Contents/Resources/islet-media.pl"
   chmod +x "$APP/Contents/Resources/islet-media.pl"
-  codesign --force --sign - "$APP/Contents/Resources/IsletMedia.dylib" 2>/dev/null || true
 fi
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -101,6 +112,41 @@ PLIST
 
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
-codesign --force --deep --sign - "$APP" 2>/dev/null || true
-echo "Built $APP $VERSION"
+# Ad-hoc signing is the development default. For a distributed build, pass
+# SIGN_IDENTITY="Developer ID Application: …" and (optionally) NOTARY_PROFILE;
+# the DMG step then notarizes and staples the result.
+SIGN_ARGS=(--force --sign "$SIGN_IDENTITY")
+if [ "$SIGN_IDENTITY" != "-" ]; then
+  SIGN_ARGS+=(--options runtime --timestamp)
+fi
+if [ -f "$APP/Contents/Resources/IsletMedia.dylib" ]; then
+  codesign "${SIGN_ARGS[@]}" "$APP/Contents/Resources/IsletMedia.dylib"
+fi
+codesign "${SIGN_ARGS[@]}" "$APP"
+
+if [ "$MAKE_DMG" = "1" ]; then
+  DMG="$DMG_DIR/islet-$VERSION.dmg"
+  if [ -f "$DMG" ] && [ "$OVERWRITE_DMG" != "1" ]; then
+    echo "Refusing to overwrite $DMG; set OVERWRITE_DMG=1 to rebuild it." >&2
+    exit 1
+  fi
+
+  echo "Building $DMG..."
+  rm -rf build/dmg
+  mkdir -p build/dmg
+  cp -R "$APP" build/dmg/
+  ln -s /Applications build/dmg/Applications
+  hdiutil create -volname "islet" -srcfolder build/dmg -ov -format UDZO "$DMG"
+
+  if [ "$SIGN_IDENTITY" != "-" ] && [ -n "$NOTARY_PROFILE" ]; then
+    echo "Notarizing $DMG..."
+    xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
+    xcrun stapler staple "$DMG"
+  fi
+fi
+
+echo "Built $APP $VERSION ($SIGN_IDENTITY)"
 echo "Run: open $PWD/$APP"
+if [ "$MAKE_DMG" = "1" ]; then
+  echo "DMG: $PWD/$DMG_DIR/islet-$VERSION.dmg"
+fi

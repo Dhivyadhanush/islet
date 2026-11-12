@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in islet is not working as expected.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For security issues, use the Security tab instead
+        of this form (see SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: islet version
+      description: The output of `islet --version`, or Settings → About.
+      placeholder: "islet 1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      description: Apple menu → About This Mac.
+      placeholder: "macOS 15.4"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the app or site you were using, and whether the notch is present.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: diagnose
+    attributes:
+      label: Diagnostics
+      description: |
+        Paste `islet --diagnose` output. Redact server names, addresses and
+        track titles if you prefer.
+      render: text
+    validations:
+      required: false
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - Homebrew cask
+        - GitHub release DMG
+        - Built from source
+    validations:
+      required: true

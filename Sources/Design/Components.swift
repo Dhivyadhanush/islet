@@ -1,56 +1,6 @@
 import SwiftUI
 import AppKit
 
-/// A compact slider with a thin track and a small thumb. The stock SwiftUI
-/// slider is too tall and too loud for a 200pt island.
-struct MiniSlider: View {
-    @Binding var value: Double
-    var tint: Color = .white
-    var onEditingChanged: (Bool) -> Void = { _ in }
-
-    @State private var dragging = false
-
-    var body: some View {
-        GeometryReader { geo in
-            let width = max(geo.size.width, 1)
-            let clamped = min(max(value, 0), 1)
-            let thumb: CGFloat = 9
-            let travel = max(width - thumb, 0)
-
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.white.opacity(0.14))
-                    .frame(height: 3)
-                Capsule()
-                    .fill(tint)
-                    .frame(width: max(3, width * clamped), height: 3)
-                Circle()
-                    .fill(tint)
-                    .frame(width: thumb, height: thumb)
-                    .offset(x: travel * clamped)
-                    .shadow(color: .black.opacity(0.45), radius: 2, y: 1)
-            }
-            .frame(height: 16)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        if !dragging {
-                            dragging = true
-                            onEditingChanged(true)
-                        }
-                        value = min(max(gesture.location.x / width, 0), 1)
-                    }
-                    .onEnded { _ in
-                        dragging = false
-                        onEditingChanged(false)
-                    }
-            )
-        }
-        .frame(height: 16)
-    }
-}
-
 /// Compact on/off switch used by the connectivity pane.
 struct IslandSwitch: View {
     @Binding var isOn: Bool
@@ -143,6 +93,7 @@ struct IslandIconButton: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .help(help)
+        .accessibilityLabel(help.isEmpty ? systemName : help)
     }
 }
 
@@ -164,21 +115,6 @@ struct IslandDivider: View {
         Rectangle()
             .fill(Theme.hairline)
             .frame(height: 1)
-    }
-}
-
-extension View {
-    /// Shows a pointing hand for clickable rows without unbalancing the cursor
-    /// stack when the pointer leaves quickly.
-    func islandPointer() -> some View {
-        self.onContinuousHover { phase in
-            switch phase {
-            case .active:
-                NSCursor.pointingHand.set()
-            case .ended:
-                NSCursor.arrow.set()
-            }
-        }
     }
 }
 
@@ -222,6 +158,7 @@ struct IslandTabButton: View {
         .buttonStyle(PressableButtonStyle(scale: 0.92))
         .onHover { hovering = $0 }
         .help(tab.title)
+        .accessibilityLabel(tab.title)
     }
 }
 

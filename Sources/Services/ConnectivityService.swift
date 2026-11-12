@@ -1,13 +1,36 @@
 import CoreWLAN
+import Darwin
 import Foundation
 import IOBluetooth
 import SwiftUI
 
-@_silgen_name("IOBluetoothPreferenceGetControllerPowerState")
-private func bluetoothPowerState() -> Int32
+/// The IOBluetooth controller power getter/setter are private but still
+/// exported by the framework. Resolve them with `dlsym` instead of a hard
+/// `@_silgen_name` link: if a future macOS drops the symbols, the Bluetooth
+/// section becomes unavailable instead of preventing islet from launching.
+private enum BluetoothPower {
+    typealias GetState = @convention(c) () -> Int32
+    typealias SetState = @convention(c) (Int32) -> Void
 
-@_silgen_name("IOBluetoothPreferenceSetControllerPowerState")
-private func setBluetoothPowerState(_ state: Int32)
+    private static let handle = dlopen(
+        "/System/Library/Frameworks/IOBluetooth.framework/IOBluetooth",
+        RTLD_LAZY
+    )
+
+    static let get: GetState? = {
+        guard let handle,
+              let symbol = dlsym(handle, "IOBluetoothPreferenceGetControllerPowerState")
+        else { return nil }
+        return unsafeBitCast(symbol, to: GetState.self)
+    }()
+
+    static let set: SetState? = {
+        guard let handle,
+              let symbol = dlsym(handle, "IOBluetoothPreferenceSetControllerPowerState")
+        else { return nil }
+        return unsafeBitCast(symbol, to: SetState.self)
+    }()
+}
 
 /// Wi-Fi and Bluetooth state for the Connectivity tab.
 @MainActor
@@ -60,7 +83,7 @@ final class ConnectivityService: ObservableObject {
             wifiRSSI = 0
         }
 
-        bluetoothPower = bluetoothPowerState() != 0
+        bluetoothPower = BluetoothPower.get?() != 0
         if bluetoothPower {
             let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
             bluetoothDevices = paired.compactMap { device in
@@ -95,7 +118,11 @@ final class ConnectivityService: ObservableObject {
     }
 
     func setBluetooth(_ enabled: Bool) {
-        setBluetoothPowerState(enabled ? 1 : 0)
+        guard let setPower = BluetoothPower.set else {
+            lastError = "Bluetooth control is unavailable on this macOS version."
+            return
+        }
+        setPower(enabled ? 1 : 0)
         lastError = nil
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             self?.refresh()
@@ -103,11 +130,18 @@ final class ConnectivityService: ObservableObject {
     }
 
     func toggleConnection(_ device: BluetoothDevice) {
-        guard let paired = IOBluetoothDevice(addressString: device.id) else { return }
-        if paired.isConnected() {
-            paired.closeConnection()
+        guard let paired = IOBluetoothDevice(addressString: device.id) else {
+            lastError = "That Bluetooth device is no longer paired."
+            return
+        }
+        let wasConnected = paired.isConnected()
+        let result = wasConnected ? paired.closeConnection() : paired.openConnection()
+        if result == 0 {
+            lastError = nil
         } else {
-            paired.openConnection()
+            lastError = wasConnected
+                ? "Disconnect failed. Bring the device closer and try again."
+                : "Connect failed. Wake the device and try again."
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             self?.refresh()

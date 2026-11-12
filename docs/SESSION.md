@@ -376,7 +376,9 @@ Request: use the waveform from `temblate.mp4` and drop the album thumbnail.
   instead of a sine line: 2 pt bars, 1.8 pt gaps, per-bar sine phases plus an
   envelope so the middle swells and the ends taper. `active` freezes it low.
 - The menu-bar chip no longer shows the cover; it is a 52×24 black capsule with
-  the white waveform only, still 6 pt left of the notch.
+  the white waveform only, still 6 pt left of the notch. (0.8.2, which added
+  the chip, was folded into 0.8.3 before a tag was cut; there is no v0.8.2
+  release.)
 - The Music pane uses the same bar waveform in the artwork accent colour.
 - Version 0.8.3.
 
@@ -460,3 +462,43 @@ and Wi-Fi controls.
   Bluetooth devices.
 - `--diagnose` now prints `wifi` and `bluetooth` instead of volume/display.
 - Version 1.1.0.
+
+## Phase 21 — browser artwork, colour and hardening (12 Nov 2026)
+
+Report: browser playback showed the title but not the cover, and the player had
+no accent colour.
+
+- Cause: browsers fetch Media Session artwork asynchronously. The helper
+  stripped `ArtworkData` whenever the track identifier was unchanged, so cover
+  art that arrived after the first metadata poll was discarded forever. The
+  helper now compares a payload fingerprint (length ^ hash) and re-sends the
+  cover when it first appears or changes.
+- `ArtworkPalette` now picks the dominant saturated hue instead of averaging
+  every pixel (which turned colourful covers grey), verifies the cached image
+  identity, and samples through an explicitly allocated bitmap buffer. A
+  greyscale cover correctly falls back to white.
+- The menu-bar chip shows a 16 pt cover thumbnail beside the waveform again
+  (70×24 pt).
+- `--diagnose` prints the artwork size and the derived accent, for example
+  `artwork 500×500, accent #B79E64`.
+- Bluetooth power symbols are resolved with `dlsym` instead of a hard
+  `@_silgen_name` link, so a future macOS cannot stop the app from launching.
+  Connect/disconnect failures now surface in the pane.
+- The one-shot command/seek helper pumps the run loop for 0.8 s inside the
+  dylib; the command fallback is no longer a no-op. `MediaBridge` retains the
+  one-shot `Process` objects.
+- Helper and legacy polling use separate miss counters; legacy never clears a
+  helper-owned track and stops when the helper recovers.
+- `BeszelParsing` is a pure, tested mapper. A system's timestamp is the sample's
+  `created` time; the Server footer says `sample …` instead of the fetch time.
+  More than two systems scroll; more than three Bluetooth devices scroll.
+- Screen Time keeps counting passive media while the user is idle when any
+  process is writing audio.
+- Removed dead code (`MiniSlider`, `islandPointer`, unused hourly Screen Time
+  storage, `Check()`, `nextEvent`, `hasAccessSecret`).
+- Added `Tests/run.sh` (30 checks), `.github/workflows/ci.yml` and
+  `.github/workflows/release.yml`. `build.sh` preserves the previous DMG,
+  builds one with `MAKE_DMG=1`, and supports Developer ID signing/notarization.
+- `--beszel-save` accepts environment variables or stdin so the password is not
+  exposed in argv. The Homebrew cask now quits the app on uninstall and zaps
+  the credentials/caches.

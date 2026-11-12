@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pure logic tests
+        run: bash Tests/run.sh
+
+      # Optional Developer ID setup. Without these secrets the release is
+      # ad-hoc signed, exactly like a local ./build.sh run.
+      - name: Configure signing (optional)
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          if [ -z "${MACOS_CERTIFICATE:-}" ]; then
+            echo "No signing certificate configured; building ad-hoc."
+            exit 0
+          fi
+
+          security create-keychain -p actions build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p actions build.keychain
+          echo "$MACOS_CERTIFICATE" | base64 -D > certificate.p12
+          security import certificate.p12 \
+            -k build.keychain \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k actions build.keychain
+
+          IDENTITY="$(security find-identity -v -p codesigning build.keychain \
+            | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' \
+            | head -1)"
+          if [ -z "$IDENTITY" ]; then
+            echo "No Developer ID Application identity in the certificate." >&2
+            exit 1
+          fi
+          echo "SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+          if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APPLE_APP_PASSWORD:-}" ]; then
+            xcrun notarytool store-credentials islet-notary \
+              --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" \
+              --password "$APPLE_APP_PASSWORD"
+            echo "NOTARY_PROFILE=islet-notary" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build universal DMG
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="$VERSION" ARCHS="arm64 x86_64" MAKE_DMG=1 bash build.sh
+
+      - name: Smoke test
+        run: ./build/islet.app/Contents/MacOS/islet --version
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists; leaving its asset untouched."
+            exit 0
+          fi
+          gh release create "v$VERSION" "build/islet-$VERSION.dmg" \
+            --title "islet $VERSION" \
+            --generate-notes
+
+      # Requires a TAP_GITHUB_TOKEN secret with repo access to
+      # Dhivyadhanush/homebrew-islet. Without it, bump the cask by hand.
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${TAP_TOKEN:-}" ]; then
+            echo "TAP_GITHUB_TOKEN is not set; skipping tap update."
+            exit 0
+          fi
+
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA="$(shasum -a 256 "build/islet-$VERSION.dmg" | awk '{print $1}')"
+
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/Dhivyadhanush/homebrew-islet.git" /tmp/homebrew-islet
+          cd /tmp/homebrew-islet
+          sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/" Casks/islet.rb
+          sed -i '' -E "s/^  sha256 \".*\"/  sha256 \"$SHA\"/" Casks/islet.rb
+
+          if git diff --quiet; then
+            echo "Cask is already current."
+            exit 0
+          fi
+
+          git config user.name "islet release bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/islet.rb
+          git commit -m "islet $VERSION"
+          git push origin HEAD:main

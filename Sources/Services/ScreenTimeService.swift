@@ -20,7 +20,6 @@ final class ScreenTimeService: ObservableObject {
 
     @Published private(set) var todaySeconds: TimeInterval = 0
     @Published private(set) var apps: [AppUsage] = []
-    @Published private(set) var hourly: [Double] = Array(repeating: 0, count: 24)
     @Published private(set) var trackingSince = Date()
     @Published private(set) var hasData = false
 
@@ -29,7 +28,6 @@ final class ScreenTimeService: ObservableObject {
         var total: Double
         var apps: [String: Double]
         var names: [String: String]
-        var hourly: [Double]
         var since: Double
     }
 
@@ -40,7 +38,6 @@ final class ScreenTimeService: ObservableObject {
     private var stored: [String: Double] = [:]
     private var names: [String: String] = [:]
     private var icons: [String: NSImage] = [:]
-    private var hourlyStored: [Double] = Array(repeating: 0, count: 24)
     private var lastPersist = Date.distantPast
 
     private static let dayFormatter: DateFormatter = {
@@ -71,7 +68,6 @@ final class ScreenTimeService: ObservableObject {
         stored.removeAll()
         names.removeAll()
         icons.removeAll()
-        hourlyStored = Array(repeating: 0, count: 24)
         todaySeconds = 0
         trackingSince = Date()
         hasData = false
@@ -83,12 +79,10 @@ final class ScreenTimeService: ObservableObject {
     func previewSeed(
         total: TimeInterval,
         apps: [AppUsage],
-        hourly: [Double],
         since: Date
     ) {
         todaySeconds = total
         self.apps = apps
-        self.hourly = hourly.count == 24 ? hourly : Array(repeating: 0, count: 24)
         trackingSince = since
         hasData = !apps.isEmpty
     }
@@ -110,7 +104,11 @@ final class ScreenTimeService: ObservableObject {
             .combinedSessionState,
             eventType: .keyDown
         )
-        guard min(mouseIdle, keyIdle) < 600 else { return }
+        // Watching a video or listening to an album produces no input for long
+        // stretches. Audio output is a reliable "still using the Mac" signal and
+        // keeps passive media from being discarded as idle time.
+        let idle = min(mouseIdle, keyIdle)
+        guard idle < 600 || AudioActivity.isAnyOutputRunning() else { return }
 
         guard let app = NSWorkspace.shared.frontmostApplication,
               let bundle = app.bundleIdentifier else { return }
@@ -120,10 +118,6 @@ final class ScreenTimeService: ObservableObject {
         names[bundle] = app.localizedName ?? bundle
         if let icon = app.icon { icons[bundle] = icon }
 
-        let hour = Calendar.current.component(.hour, from: now)
-        if hourlyStored.indices.contains(hour) {
-            hourlyStored[hour] += delta
-        }
         todaySeconds += delta
         hasData = true
         rebuildApps()
@@ -144,7 +138,6 @@ final class ScreenTimeService: ObservableObject {
             )
         }
         .sorted { $0.seconds > $1.seconds }
-        hourly = hourlyStored
     }
 
     private func rolloverIfNeeded(_ now: Date) {
@@ -154,7 +147,6 @@ final class ScreenTimeService: ObservableObject {
         stored.removeAll()
         names.removeAll()
         icons.removeAll()
-        hourlyStored = Array(repeating: 0, count: 24)
         todaySeconds = 0
         trackingSince = now
         hasData = false
@@ -169,7 +161,6 @@ final class ScreenTimeService: ObservableObject {
 
         stored = archive.apps
         names = archive.names
-        hourlyStored = archive.hourly.count == 24 ? archive.hourly : Array(repeating: 0, count: 24)
         todaySeconds = archive.total
         trackingSince = Date(timeIntervalSince1970: archive.since)
         hasData = archive.total > 0
@@ -189,7 +180,6 @@ final class ScreenTimeService: ObservableObject {
             total: todaySeconds,
             apps: stored,
             names: names,
-            hourly: hourlyStored,
             since: trackingSince.timeIntervalSince1970
         )
         if let data = try? JSONEncoder().encode(archive) {

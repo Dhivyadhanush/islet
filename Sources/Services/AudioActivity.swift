@@ -15,19 +15,11 @@ enum AudioActivity {
 
         var matched = false
         for process in processes {
-            let processPID: pid_t = value(process, kAudioProcessPropertyPID, 0) ?? 0
-            let processBundle: String = {
-                guard let bundle: CFString = value(
-                    process,
-                    kAudioProcessPropertyBundleID,
-                    "" as CFString
-                ) else { return "" }
-                return bundle as String
-            }()
-            let running: UInt32 = value(
+            let processPID: pid_t = integerValue(process, kAudioProcessPropertyPID) ?? 0
+            let processBundle = stringValue(process, kAudioProcessPropertyBundleID) ?? ""
+            let running: UInt32 = integerValue(
                 process,
-                kAudioProcessPropertyIsRunningOutput,
-                0
+                kAudioProcessPropertyIsRunningOutput
             ) ?? 0
 
             let pidMatches = pid > 0 && processPID == pid
@@ -42,6 +34,21 @@ enum AudioActivity {
         // The app is connected to the audio system but every matching process
         // has its output stream stopped.
         return matched ? false : nil
+    }
+
+    /// True when any process is writing audio to an output device. Screen Time
+    /// uses this to keep counting passive media playback while the user is idle.
+    static func isAnyOutputRunning() -> Bool {
+        guard #available(macOS 14.2, *) else { return false }
+        guard let processes = audioProcesses() else { return false }
+        for process in processes {
+            let running: UInt32 = integerValue(
+                process,
+                kAudioProcessPropertyIsRunningOutput
+            ) ?? 0
+            if running != 0 { return true }
+        }
+        return false
     }
 
     @available(macOS 14.2, *)
@@ -68,19 +75,37 @@ enum AudioActivity {
     }
 
     @available(macOS 14.2, *)
-    private static func value<T>(
+    private static func integerValue<T: FixedWidthInteger>(
         _ object: AudioObjectID,
-        _ selector: AudioObjectPropertySelector,
-        _ initial: T
+        _ selector: AudioObjectPropertySelector
     ) -> T? {
         var address = AudioObjectPropertyAddress(
             mSelector: selector,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
-        var result = initial
+        var result = T.zero
         var size = UInt32(MemoryLayout<T>.size)
         let status = AudioObjectGetPropertyData(object, &address, 0, nil, &size, &result)
         return status == noErr ? result : nil
+    }
+
+    /// CFString properties are returned as a pointer; read it through
+    /// `Unmanaged` so the generic integer helper never sees an object type.
+    @available(macOS 14.2, *)
+    private static func stringValue(
+        _ object: AudioObjectID,
+        _ selector: AudioObjectPropertySelector
+    ) -> String? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: selector,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var result: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        let status = AudioObjectGetPropertyData(object, &address, 0, nil, &size, &result)
+        guard status == noErr, let result else { return nil }
+        return result.takeUnretainedValue() as String
     }
 }

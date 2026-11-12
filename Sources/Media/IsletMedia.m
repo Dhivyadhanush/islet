@@ -95,6 +95,7 @@ static void emit(NSDictionary *dictionary) {
 /// reads stdout until it terminates the helper.
 __attribute__((visibility("default"))) void islet_stream(void) {
     NSString *lastArtworkID = nil;
+    NSUInteger lastArtworkFingerprint = 0;
     while (1) {
         @autoreleasepool {
             NSDictionary *information = queryOnce();
@@ -109,12 +110,26 @@ __attribute__((visibility("default"))) void islet_stream(void) {
                     information[@"kMRMediaRemoteNowPlayingInfoAlbum"] ?: @""];
             }
 
-            if ([identifier isEqual:lastArtworkID]) {
-                NSMutableDictionary *trimmed = [information mutableCopy];
-                [trimmed removeObjectForKey:@"kMRMediaRemoteNowPlayingInfoArtworkData"];
-                information = trimmed;
+            // Browsers fetch Media Session artwork asynchronously, so the first
+            // poll for a new track often has the title but no cover. Compare the
+            // artwork payload itself instead of only the track identifier, or
+            // late-arriving cover art would be stripped forever.
+            NSData *artworkData = information[@"kMRMediaRemoteNowPlayingInfoArtworkData"];
+            NSUInteger fingerprint = artworkData
+                ? (artworkData.length ^ artworkData.hash)
+                : 0;
+            BOOL sameArtwork = [identifier isEqual:lastArtworkID]
+                && fingerprint == lastArtworkFingerprint;
+
+            if (sameArtwork) {
+                if (artworkData) {
+                    NSMutableDictionary *trimmed = [information mutableCopy];
+                    [trimmed removeObjectForKey:@"kMRMediaRemoteNowPlayingInfoArtworkData"];
+                    information = trimmed;
+                }
             } else {
                 lastArtworkID = identifier;
+                lastArtworkFingerprint = fingerprint;
             }
 
             emit(information);
@@ -123,12 +138,22 @@ __attribute__((visibility("default"))) void islet_stream(void) {
     }
 }
 
+// MediaRemote delivers commands asynchronously and only while the calling
+// process is alive. The stream mode is long-lived, but the app's one-shot
+// fallback launches this helper, calls a function and exits immediately, so
+// pump the run loop briefly or the command is silently dropped.
+static void pumpRunLoop(NSTimeInterval seconds) {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:seconds]];
+}
+
 __attribute__((visibility("default"))) void islet_command(int command) {
     loadMediaRemote();
     if (gSend) gSend(command, nil);
+    pumpRunLoop(0.8);
 }
 
 __attribute__((visibility("default"))) void islet_seek(double time) {
     loadMediaRemote();
     if (gSeek) gSeek(time);
+    pumpRunLoop(0.8);
 }
