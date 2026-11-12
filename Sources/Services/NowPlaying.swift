@@ -22,6 +22,8 @@ final class NowPlaying: ObservableObject {
         var artwork: NSImage?
         var source: String = ""
         var sourceIcon: NSImage?
+        var sourcePID: pid_t = 0
+        var sourceBundleID: String = ""
         var isPlaying: Bool { rate > 0.01 }
     }
 
@@ -46,6 +48,7 @@ final class NowPlaying: ObservableObject {
     private var artworkCache: [String: NSImage] = [:]
     private var legacyStarted = false
     private var lastLineAt: Date?
+    private var silentChecks = 0
     private var scriptInFlight = false
     private var lastScript = Date.distantPast
 
@@ -94,6 +97,7 @@ final class NowPlaying: ObservableObject {
             current.rate = current.rate > 0 ? 0 : 1
             track = current
             lastSync = Date()
+            silentChecks = 0
         }
     }
 
@@ -147,6 +151,7 @@ final class NowPlaying: ObservableObject {
             if misses >= 3 {
                 track = nil
                 position = 0
+                silentChecks = 0
             }
             return
         }
@@ -177,10 +182,30 @@ final class NowPlaying: ObservableObject {
 
         var source = ""
         var sourceIcon: NSImage?
-        if let pid = info["_pid"] as? Int, pid > 0,
-           let app = NSRunningApplication(processIdentifier: pid_t(pid)) {
-            source = app.localizedName ?? ""
-            sourceIcon = app.icon
+        var sourcePID: pid_t = 0
+        var sourceBundleID = ""
+        if let rawPID = info["_pid"] as? Int, rawPID > 0 {
+            sourcePID = pid_t(rawPID)
+            if let app = NSRunningApplication(processIdentifier: sourcePID) {
+                source = app.localizedName ?? ""
+                sourceIcon = app.icon
+                sourceBundleID = app.bundleIdentifier ?? ""
+            }
+        }
+
+        // Some browsers keep a media session at PlaybackRate 1 after the audio
+        // has stopped. Trust CoreAudio's output flag over the stale rate.
+        var effectiveRate = rate
+        if rate > 0,
+           let running = AudioActivity.isOutputRunning(pid: sourcePID, bundleID: sourceBundleID) {
+            if running {
+                silentChecks = 0
+            } else {
+                silentChecks += 1
+                if silentChecks >= 2 { effectiveRate = 0 }
+            }
+        } else {
+            silentChecks = 0
         }
 
         let updated = Track(
@@ -189,10 +214,12 @@ final class NowPlaying: ObservableObject {
             album: album,
             duration: duration,
             elapsed: elapsed,
-            rate: rate,
+            rate: effectiveRate,
             artwork: artwork,
             source: source,
-            sourceIcon: sourceIcon
+            sourceIcon: sourceIcon,
+            sourcePID: sourcePID,
+            sourceBundleID: sourceBundleID
         )
 
         let changed = track?.title != updated.title
@@ -239,6 +266,7 @@ final class NowPlaying: ObservableObject {
                 self.misses += 1
                 if self.misses >= 3 {
                     self.track = nil
+                    self.silentChecks = 0
                     self.position = 0
                     self.fallbackIfNeeded()
                 }

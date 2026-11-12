@@ -20,6 +20,9 @@ disappears into the notch; hover the notch to open it.
   artwork, title, artist, source app, scrubbable progress and transport
   controls. The progress bar, play button and artwork glow take their colour
   from the current cover, and a flowing sound wave shows the track is live.
+  Playback state is checked against CoreAudio's per-process output, so a stale
+  browser media session does not keep the player or the chip visible after the
+  sound stops.
 - **Now-playing chip beside the notch.** While audio is playing, a small black
   chip with a live bar waveform sits in the menu bar immediately left of the
   notch. Click it to open the Music tab; it disappears when playback stops or

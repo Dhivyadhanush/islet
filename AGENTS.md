@@ -37,6 +37,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/Island/Panes/*` | Music, network, screen time, controls, calendar, server |
 | `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, Beszel |
 | `Sources/Design/ArtworkPalette.swift` | Accent colour sampled from album art |
+| `Sources/Services/AudioActivity.swift` | CoreAudio per-process output check |
 | `Sources/Media/IsletMedia.m` | Objective-C dylib loaded by perl |
 | `Sources/Media/islet-media.pl` | Loader/stream entry point |
 | `Sources/Settings/*` | Settings window |
@@ -133,7 +134,15 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     Settings window on success and stays open only when the login item needs
     attention. Revert reloads the stored values. Do not bind the toggles
     straight to `@AppStorage` again or changes will leak before saving.
-15. **Start at login.** `LaunchAtLogin` wraps `SMAppService.mainApp`.
+15. **Real playback state.** MediaRemote can keep `PlaybackRate = 1` for a
+    browser tab whose audio has stopped (a stale media session). `NowPlaying`
+    checks `AudioActivity.isOutputRunning(pid:bundleID:)` and forces the rate to
+    0 after two consecutive silent samples (~3 s). The check matches the source
+    PID or a process whose bundle ID has the app's bundle ID as a prefix, so
+    Chromium/Firefox helper processes count. `nil` means unknown (older macOS or
+    no audio client) and leaves the rate alone. Do not gate this on elapsed
+    time; browsers often stop updating it.
+16. **Start at login.** `LaunchAtLogin` wraps `SMAppService.mainApp`.
     `isRegistered` includes `.requiresApproval` so the toggle stays on while
     macOS waits for the user in System Settings → General → Login Items.
     Settings applies the change on Save; the menu-bar item toggles it

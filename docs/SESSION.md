@@ -423,3 +423,19 @@ Request: after pressing Save, close the Settings window.
   approval note); that message is also shown in the save bar.
 - Removed the transient "Saved" label, which is no longer visible.
 - Version 1.0.2.
+
+## Phase 19 — hide the chip for stale media sessions (12 Nov 2026)
+
+Report: the waveform chip stayed in the menu bar with no audio playing.
+
+- Cause: Zen kept a media session at `PlaybackRate = 1` with no audio output.
+- `AudioActivity` reads CoreAudio's process object list and
+  `kAudioProcessPropertyIsRunningOutput`. It matches the now-playing PID, or a
+  process whose bundle ID extends the app's bundle ID (helper processes).
+- `NowPlaying.ingest` forces the effective rate to 0 after two consecutive
+  silent samples (~3 s); `nil` (unknown/old macOS) leaves the rate untouched.
+- The track now carries `sourcePID` / `sourceBundleID` from MediaRemote's
+  `_pid`.
+- Verified against the stale Zen session: diagnose reports `[paused]` and the
+  chip window is offscreen. `--beszel-test` still reports both systems up.
+- Version 1.0.3.
