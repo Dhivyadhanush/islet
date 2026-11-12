@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let nowPlaying = NowPlaying()
     private let network = NetworkMonitor()
     private let screenTime = ScreenTimeService()
-    private let controls = SystemControls()
+    private let connectivity = ConnectivityService()
     private let calendar = CalendarService()
     private let battery = BatteryMonitor()
     private let server = ServerStatusService()
@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             nowPlaying: nowPlaying,
             network: network,
             screenTime: screenTime,
-            controls: controls,
+            connectivity: connectivity,
             calendar: calendar,
             battery: battery,
             server: server
@@ -56,7 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         nowPlaying.start()
         network.start()
         screenTime.start()
-        controls.start()
+        connectivity.start()
         calendar.start()
         battery.start()
         server.start()
@@ -68,8 +68,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { exit(1) }
                 print("network  \(ByteFormat.bytes(self.network.todayTotal)) today, \(ByteFormat.rate(self.network.rate))")
                 print("screentime \(ScreenTimeFormat.duration(self.screenTime.todaySeconds)) today (local)")
-                print("volume   \(Int((self.controls.volume * 100).rounded()))%\(self.controls.muted ? " muted" : "")")
-                print("display  \(Int((self.controls.brightness * 100).rounded()))%")
+                print("wifi     \(self.connectivity.wifiPower ? (self.connectivity.wifiConnected ? "connected \(self.connectivity.wifiAddress) (\(self.connectivity.wifiRSSI) dBm)" : "on, not connected") : "off")")
+                let connectedDevices = self.connectivity.bluetoothDevices.filter(\.isConnected).count
+                print("bluetooth \(self.connectivity.bluetoothPower ? "on, \(connectedDevices) connected, \(self.connectivity.bluetoothDevices.count) paired" : "off")")
                 if let track = self.nowPlaying.track {
                     print("music    \(track.title) — \(track.artist) [\(track.isPlaying ? "playing" : "paused")] \(track.source)")
                 } else {
@@ -96,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         network.flush()
         nowPlaying.stop()
         server.stop()
+        connectivity.stop()
     }
 
     // MARK: - Now-playing chip

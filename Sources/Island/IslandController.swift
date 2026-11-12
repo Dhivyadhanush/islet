@@ -9,7 +9,7 @@ final class IslandController {
     private let nowPlaying: NowPlaying
     private let network: NetworkMonitor
     private let screenTime: ScreenTimeService
-    private let controls: SystemControls
+    private let connectivity: ConnectivityService
     private let calendar: CalendarService
     private let battery: BatteryMonitor
     private let server: ServerStatusService
@@ -25,7 +25,7 @@ final class IslandController {
         nowPlaying: NowPlaying,
         network: NetworkMonitor,
         screenTime: ScreenTimeService,
-        controls: SystemControls,
+        connectivity: ConnectivityService,
         calendar: CalendarService,
         battery: BatteryMonitor,
         server: ServerStatusService
@@ -34,7 +34,7 @@ final class IslandController {
         self.nowPlaying = nowPlaying
         self.network = network
         self.screenTime = screenTime
-        self.controls = controls
+        self.connectivity = connectivity
         self.calendar = calendar
         self.battery = battery
         self.server = server
@@ -49,7 +49,7 @@ final class IslandController {
                 .environmentObject(nowPlaying)
                 .environmentObject(network)
                 .environmentObject(screenTime)
-                .environmentObject(controls)
+                .environmentObject(connectivity)
                 .environmentObject(calendar)
                 .environmentObject(battery)
                 .environmentObject(server)

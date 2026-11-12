@@ -24,13 +24,24 @@ enum Snapshot {
         let nowPlaying = NowPlaying()
         let network = NetworkMonitor()
         let screenTime = ScreenTimeService()
-        let controls = SystemControls()
+        let connectivity = ConnectivityService()
         let calendar = CalendarService()
         let battery = BatteryMonitor()
         let server = ServerStatusService()
 
         battery.previewSeed(percentage: 82, charging: true)
-        controls.previewSeed(volume: 0.62, brightness: 0.78)
+        connectivity.previewSeed(
+            wifiPower: true,
+            wifiConnected: true,
+            wifiAddress: "192.168.1.42",
+            wifiRSSI: -52,
+            bluetoothPower: true,
+            devices: [
+                .init(id: "airpods", name: "AirPods Pro", isConnected: true),
+                .init(id: "iphone", name: "iPhone", isConnected: false),
+                .init(id: "keyboard", name: "Magic Keyboard", isConnected: false),
+            ]
+        )
         calendar.previewSeed(status: .fullAccess, events: sampleEvents())
         server.previewSeed(systems: sampleSystems())
         let history = sampleHistory()
@@ -65,7 +76,7 @@ enum Snapshot {
                 .environmentObject(nowPlaying)
                 .environmentObject(network)
                 .environmentObject(screenTime)
-                .environmentObject(controls)
+                .environmentObject(connectivity)
                 .environmentObject(calendar)
                 .environmentObject(battery)
                 .environmentObject(server)
@@ -88,8 +99,8 @@ enum Snapshot {
         state.tab = .screenTime
         render(root, size: expanded, name: "03-expanded-screentime", directory: directoryURL)
 
-        state.tab = .controls
-        render(root, size: expanded, name: "04-expanded-controls", directory: directoryURL)
+        state.tab = .connectivity
+        render(root, size: expanded, name: "04-expanded-connectivity", directory: directoryURL)
 
         state.tab = .calendar
         render(root, size: expanded, name: "05-expanded-calendar", directory: directoryURL)

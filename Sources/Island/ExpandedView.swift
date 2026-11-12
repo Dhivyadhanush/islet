@@ -30,7 +30,7 @@ struct ExpandedView: View {
         if showMusic { result.append(.music) }
         if showNetwork { result.append(.network) }
         if showScreenTime { result.append(.screenTime) }
-        if showControls { result.append(.controls) }
+        if showControls { result.append(.connectivity) }
         if showCalendar { result.append(.calendar) }
         if showServer { result.append(.server) }
         return result
@@ -129,7 +129,7 @@ struct ExpandedView: View {
                 case .music: MusicPane()
                 case .network: NetworkPane()
                 case .screenTime: ScreenTimePane()
-                case .controls: ControlsPane()
+                case .connectivity: ConnectivityPane()
                 case .calendar: CalendarPane()
                 case .server: ServerPane()
                 }

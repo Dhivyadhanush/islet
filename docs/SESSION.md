@@ -439,3 +439,24 @@ Report: the waveform chip stayed in the menu bar with no audio playing.
 - Verified against the stale Zen session: diagnose reports `[paused]` and the
   chip window is offscreen. `--beszel-test` still reports both systems up.
 - Version 1.0.3.
+
+## Phase 20 — Connectivity replaces Controls (12 Nov 2026)
+
+Request: replace the volume/brightness pane (keyboard does those) with Bluetooth
+and Wi-Fi controls.
+
+- Removed `ControlsPane` and `SystemControls`; added `ConnectivityPane` and
+  `ConnectivityService`.
+- Wi-Fi: CoreWLAN power toggle, IPv4 address, RSSI and connection state.
+  `ssid()` is nil without Location, so the address is shown instead.
+- Bluetooth: power toggle through the exported
+  `IOBluetoothPreferenceSetControllerPowerState` symbol, paired-device list with
+  green/grey dots and Connect/Disconnect buttons.
+- The tab is now **Connectivity** (Wi-Fi icon); Settings → Modules uses the same
+  `showControls` key so existing preferences survive.
+- Added `NSBluetoothAlwaysUsageDescription` /
+  `NSBluetoothPeripheralUsageDescription`.
+- Snapshot: `04-expanded-connectivity.png`, seeded with sample Wi-Fi and three
+  Bluetooth devices.
+- `--diagnose` now prints `wifi` and `bluetooth` instead of volume/display.
+- Version 1.1.0.

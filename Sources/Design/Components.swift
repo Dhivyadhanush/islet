@@ -51,6 +51,30 @@ struct MiniSlider: View {
     }
 }
 
+/// Compact on/off switch used by the connectivity pane.
+struct IslandSwitch: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            Capsule()
+                .fill(isOn ? Theme.online : Color.white.opacity(0.16))
+                .frame(width: 30, height: 16)
+                .overlay(alignment: isOn ? .trailing : .leading) {
+                    Circle()
+                        .fill(isOn ? Color.black.opacity(0.78) : Color.white.opacity(0.72))
+                        .frame(width: 12, height: 12)
+                        .padding(2)
+                }
+        }
+        .buttonStyle(PressableButtonStyle(scale: 0.92))
+        .animation(Theme.quick, value: isOn)
+        .accessibilityLabel(isOn ? "On" : "Off")
+    }
+}
+
 /// A bar-style audio waveform like a real player visualizer. `active` freezes
 /// it into a low row when paused.
 struct PlayingWaveform: View {

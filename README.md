@@ -5,7 +5,7 @@
 <h1 align="center">islet</h1>
 
 A minimal, native dynamic island for the MacBook notch. Music, network data,
-Screen Time, system controls, calendar and a server slot — built with SwiftUI
+Screen Time, Wi-Fi/Bluetooth, calendar and a server slot — built with SwiftUI
 and AppKit, with no Electron, no web views and no analytics. When idle it
 disappears into the notch; hover the notch to open it.
 
@@ -33,8 +33,9 @@ disappears into the notch; hover the notch to open it.
   clean.
 - **Screen Time.** Today's frontmost-app time, a stacked app breakdown, top
   apps and a local estimate that starts the moment islet is running.
-- **Volume and brightness.** Thin, fast sliders backed by CoreAudio and
-  DisplayServices. Mute with one click.
+- **Wi-Fi and Bluetooth.** Toggle either radio, see the Wi-Fi address and
+  signal, and connect or disconnect paired Bluetooth devices from the
+  Connectivity tab.
 - **Calendar.** Today's events, an ongoing-event highlight, and a **Join**
   button when an event contains a meeting link.
 - **Server status with Beszel.** Every system in your hub — Server1, Raspberry
@@ -52,7 +53,7 @@ disappears into the notch; hover the notch to open it.
   <img src="docs/preview-screentime.png" width="340" alt="Screen Time">
 </p>
 <p align="center">
-  <img src="docs/preview-controls.png" width="340" alt="Controls">
+  <img src="docs/preview-connectivity.png" width="340" alt="Connectivity">
   <img src="docs/preview-calendar.png" width="340" alt="Calendar">
 </p>
 <p align="center">
@@ -94,7 +95,7 @@ on first launch.
 
 1. **Hover the notch.** The collapsed island is the notch silhouette. The tab
    strip appears in the menu-bar wings: Music, Network and Screen Time on the
-   left of the notch; Controls, Calendar and Server on the right.
+   left of the notch; Connectivity, Calendar and Server on the right.
 2. **Click a tab.** The pane hangs below the notch. The pin keeps it open; the
    gear opens Settings.
 3. **Choose Server metrics.** Settings → **Server metrics**: tick CPU, RAM,
@@ -233,12 +234,12 @@ were produced.
 | Network | None (kernel interface counters) |
 | Screen Time | None (local frontmost-app tracker) |
 | Server status | Beszel read-only login (+ optional Cloudflare Access service token) |
-| Volume | None (CoreAudio) |
-| Brightness | None (DisplayServices, built-in display) |
+| Wi-Fi | None for power/address; network name may be hidden without Location |
+| Bluetooth | Bluetooth access, requested on first use |
 | Calendar | Calendar access, requested when you tap **Connect** |
 
-islet is not sandboxed because brightness and the media helper need
-system frameworks. It does not send data anywhere.
+islet is not sandboxed because the media helper and Bluetooth control need
+direct access to system frameworks. It does not send data anywhere.
 
 ## Configuration
 
@@ -247,7 +248,7 @@ drafted in the window; press **Save** (⌘S) to apply them or **Revert** to
 discard. The Server section keeps its own **Save & Test** for the Beszel
 connection.
 
-- Modules: Music, Network, Screen Time, Controls, Calendar, Server.
+- Modules: Music, Network, Screen Time, Connectivity, Calendar, Server.
 - Server metrics: CPU / RAM / Disk / Network checkboxes (only checked metrics
   show; the rest auto-fill the row). CPU/RAM/Disk include a percentage bar and
   a green/red online dot per system.
@@ -268,11 +269,11 @@ connection.
 - **Server status needs Beszel.** Configure a read-only Beszel user; until then
   the Server tab shows a setup prompt. If Cloudflare Access is enabled, the app
   also needs an Access service token.
-- Brightness applies to the built-in display. External displays are left alone.
-- **No custom volume/brightness HUD.** macOS draws its own volume and brightness
-  overlay through Control Center, and there is no public API to suppress it.
-  islet therefore leaves those to the system instead of drawing a second
-  bar in the notch.
+- **Wi-Fi names need Location.** macOS hides the SSID from apps without
+  Location permission, so the Connectivity tab shows the interface address and
+  signal instead. Toggling Wi-Fi itself needs no permission.
+- **Bluetooth connect depends on the device.** A paired device must be awake and
+  in range; macOS may also ask for Bluetooth access the first time.
 - The app is ad-hoc signed. A Developer ID build would remove the Gatekeeper
   warning; the source is here if you want to sign it yourself.
 - Calendar access is read-only.
@@ -286,12 +287,13 @@ SwiftUI island (NSPanel, .statusBar, non-activating)
 │   ├── MusicPane      MediaRemote helper + seek + source badge
 │   ├── NetworkPane    daily totals, live rate and 7-day chart
 │   ├── ScreenTimePane local frontmost-app tracker + app breakdown
-│   ├── ControlsPane   CoreAudio volume + DisplayServices brightness
+│   ├── ConnectivityPane Wi-Fi power/address + Bluetooth power/devices
 │   ├── CalendarPane   EventKit + meeting-link Join
 │   └── ServerPane     Beszel status + CPU/RAM/disk/uptime
-└── Services           NowPlaying, NetworkMonitor, ScreenTimeService,
-                       SystemControls, CalendarService, BatteryMonitor,
-                       ServerStatusService, BeszelClient, CredentialStore, MediaBridge
+└── Services           NowPlaying, AudioActivity, NetworkMonitor,
+                       ScreenTimeService, ConnectivityService, CalendarService,
+                       BatteryMonitor, ServerStatusService, BeszelClient,
+                       CredentialStore, MediaBridge
 ```
 
 The collapsed window is exactly the notch plus a 10 pt transparent hover margin.

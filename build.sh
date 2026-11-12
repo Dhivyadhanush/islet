@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 APP="build/islet.app"
 EXEC="islet"
-VERSION="${VERSION:-1.0.3}"
+VERSION="${VERSION:-1.1.0}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"
@@ -91,6 +91,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   </dict>
   <key>NSCalendarsFullAccessUsageDescription</key><string>islet shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
   <key>NSCalendarsUsageDescription</key><string>islet shows today's events in the notch. Your calendar is read on this Mac only and is never sent anywhere.</string>
+  <key>NSBluetoothAlwaysUsageDescription</key><string>islet shows your Bluetooth devices in the Connectivity tab.</string>
+  <key>NSBluetoothPeripheralUsageDescription</key><string>islet shows your Bluetooth devices in the Connectivity tab.</string>
   <key>NSAppleEventsUsageDescription</key><string>islet reads the current track from Music or Spotify only when the system now-playing information is unavailable. Nothing else is read or sent.</string>
   <key>NSHumanReadableCopyright</key><string>islet</string>
 </dict>

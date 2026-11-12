@@ -5,7 +5,7 @@ enum IslandTab: String, CaseIterable, Identifiable {
     case music
     case network
     case screenTime
-    case controls
+    case connectivity
     case calendar
     case server
 
@@ -16,7 +16,7 @@ enum IslandTab: String, CaseIterable, Identifiable {
         case .music: return "Music"
         case .network: return "Network"
         case .screenTime: return "Screen Time"
-        case .controls: return "Controls"
+        case .connectivity: return "Connectivity"
         case .calendar: return "Calendar"
         case .server: return "Server"
         }
@@ -27,7 +27,7 @@ enum IslandTab: String, CaseIterable, Identifiable {
         case .music: return "music.note"
         case .network: return "arrow.up.arrow.down"
         case .screenTime: return "hourglass"
-        case .controls: return "slider.horizontal.3"
+        case .connectivity: return "wifi"
         case .calendar: return "calendar"
         case .server: return "server.rack"
         }

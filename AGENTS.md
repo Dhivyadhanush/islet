@@ -13,7 +13,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 ```
 
 - `--diagnose` starts the services, waits 3 s, prints network/screen time/
-  volume/brightness/media/battery/server/calendar state, then exits. Use it to verify
+  Wi-Fi/Bluetooth/media/battery/server/calendar state, then exits. Use it to verify
   the media helper.
 - `--snapshot` renders every island state offscreen with sample data. It needs no
   Screen Recording permission. The PNGs in `docs/` come from this.
@@ -34,7 +34,7 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
 | `Sources/Island/IslandShape.swift` | Animatable top/bottom corner radii |
 | `Sources/Island/ExpandedView.swift` | Tabs, battery, pin, gear |
 | `Sources/Island/NowPlayingChip.swift` | Waveform chip left of the notch |
-| `Sources/Island/Panes/*` | Music, network, screen time, controls, calendar, server |
+| `Sources/Island/Panes/*` | Music, network, screen time, connectivity, calendar, server |
 | `Sources/Services/*` | Media, network, screen time, CoreAudio, EventKit, battery, Beszel |
 | `Sources/Design/ArtworkPalette.swift` | Accent colour sampled from album art |
 | `Sources/Services/AudioActivity.swift` | CoreAudio per-process output check |
@@ -148,6 +148,16 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     Settings applies the change on Save; the menu-bar item toggles it
     immediately. The bundle ID must stay `dev.dhanuz.islet` for the existing
     login-item registration to survive a rename or rebuild.
+
+17. **Connectivity.** `ConnectivityService` reads CoreWLAN for power, address and
+    RSSI, and IOBluetooth for paired devices. `ssid()` is normally nil without
+    Location permission, so the pane shows the IPv4 address and dBm instead.
+    Bluetooth power uses the private
+    `IOBluetoothPreferenceGet/SetControllerPowerState` symbols through
+    `@_silgen_name` (still exported by IOBluetooth); devices connect with
+    `IOBluetoothDevice.openConnection()`. The module keeps the
+    `Defaults.showControls` key so existing preferences survive the rename to
+    Connectivity.
 
 ## Release checklist
 

@@ -39,9 +39,9 @@ struct SettingsView: View {
                     isOn: $draft.showScreenTime
                 )
                 moduleRow(
-                    icon: "slider.horizontal.3",
-                    title: "Controls",
-                    subtitle: "Volume and display brightness",
+                    icon: "wifi",
+                    title: "Connectivity",
+                    subtitle: "Wi-Fi and Bluetooth",
                     isOn: $draft.showControls
                 )
                 moduleRow(
@@ -347,7 +347,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.3"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.0"
         return "v\(short)"
     }
 
