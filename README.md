@@ -98,26 +98,55 @@ on first launch.
    left of the notch; Connectivity, Calendar and Server on the right.
 2. **Click a tab.** The pane hangs below the notch. The pin keeps it open; the
    gear opens Settings.
-3. **Choose Server metrics.** Settings → **Server metrics**: tick CPU, RAM,
+3. **Use Connectivity.** Toggle Wi-Fi or Bluetooth, check the Wi-Fi address and
+   signal, and connect or disconnect a paired Bluetooth device. The first
+   Bluetooth access may ask for permission.
+4. **Choose Server metrics.** Settings → **Server metrics**: tick CPU, RAM,
    Disk and Network. Only the checked metrics appear; the remaining ones
    auto-justify across the full row and the system rows share the height
    (uncheck Network and CPU/RAM/Disk spread edge-to-edge). CPU, RAM and Disk
    also show a percentage bar under the value. The status dot is green when the
    machine is online and red when it is not; bars are green below 40%, blue
    from 40% to 79%, and red at 80% and above.
-4. **Choose modules.** Settings → **Modules**: enable or disable any tab.
-5. **Connect Beszel.** Settings → **Server (Beszel)**: hub URL, read-only
+5. **Choose modules.** Settings → **Modules**: enable or disable any tab.
+6. **Connect Beszel.** Settings → **Server (Beszel)**: hub URL, read-only
    email/password, optional Cloudflare Access Client ID/Secret.
-6. **Tune the island.** Settings → **Behavior** (hover, battery, start at
+7. **Tune the island.** Settings → **Behavior** (hover, battery, start at
    login) and **Motion** (calm animations).
-7. **Save your preferences.** Settings changes are drafted locally; press
+8. **Save your preferences.** Settings changes are drafted locally; press
    **Save** (⌘S) to apply them and close the window, or **Revert** to discard.
    Nothing changes in the island until you save.
-8. **Menu bar item:** show/hide, settings, start at login, quit. While music
+9. **Menu bar item:** show/hide, settings, start at login, quit. While music
    plays, a small waveform chip appears just left of the notch; click it to
    open the Music tab.
 
 Click anywhere outside the island to close it.
+
+## Connectivity
+
+The **Connectivity** tab (the Wi-Fi glyph in the right wing) replaces the old
+volume/brightness sliders — the keyboard and Control Center already handle those.
+
+<p align="center">
+  <img src="docs/preview-connectivity.png" width="700" alt="Connectivity tab with Wi-Fi and Bluetooth">
+</p>
+
+### Wi-Fi
+- Turn the radio on or off with the switch.
+- The subtitle shows the interface address and signal, for example
+  `192.168.1.42 · -52 dBm`.
+- macOS hides the SSID from apps without Location permission, so the network
+  name is not shown; the address is.
+- Changes apply immediately and the pane refreshes every 5 seconds.
+
+### Bluetooth
+- Turn Bluetooth on or off with the switch.
+- Paired devices are listed with a green dot when connected and a grey dot when
+  not.
+- **Connect** / **Disconnect** acts on that device. It must be awake and in
+  range, and macOS may ask for Bluetooth access the first time.
+
+Hide the tab in **Settings → Modules** if you do not need it.
 
 ## Browser media
 
