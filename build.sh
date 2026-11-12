@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 APP="build/islet.app"
 EXEC="islet"
-VERSION="${VERSION:-1.0.1}"
+VERSION="${VERSION:-1.0.2}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary.
 ARCHS="${ARCHS:-$(uname -m)}"

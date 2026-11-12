@@ -9,7 +9,6 @@ struct SettingsView: View {
     @EnvironmentObject private var nowPlaying: NowPlaying
 
     @State private var draft = SettingsDraft.load()
-    @State private var savedNote = false
 
     @State private var loginError: String?
     @State private var serverURL = ""
@@ -221,10 +220,10 @@ struct SettingsView: View {
 
     private var saveBar: some View {
         HStack(spacing: 10) {
-            if savedNote {
-                Label("Saved", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .transition(.opacity)
+            if let loginError {
+                Text(loginError)
+                    .foregroundStyle(.red)
+                    .lineLimit(1)
             } else {
                 Text("Changes apply when you save.")
                     .foregroundStyle(.secondary)
@@ -253,10 +252,16 @@ struct SettingsView: View {
     private func saveDraft() {
         draft.save()
         applyLoginSetting()
-        withAnimation(.easeOut(duration: 0.15)) { savedNote = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-            withAnimation(.easeOut(duration: 0.15)) { savedNote = false }
-        }
+
+        // Close on success; stay open only when macOS needs the user to act.
+        guard loginError == nil else { return }
+        closeSettingsWindow()
+    }
+
+    private func closeSettingsWindow() {
+        let window = NSApp.keyWindow
+            ?? NSApp.windows.first { $0.title == "islet Settings" }
+        window?.performClose(nil)
     }
 
     private func applyLoginSetting() {
@@ -342,7 +347,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.1"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.2"
         return "v\(short)"
     }
 

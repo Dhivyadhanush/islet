@@ -129,9 +129,10 @@ ARCHS="arm64 x86_64" ./build.sh             # universal
     this; it cannot sit left of the notch.
 14. **Settings are explicit-save.** `SettingsView` edits a `SettingsDraft` in
     `@State`; only the Save button (⌘S) writes `UserDefaults`. The island and
-    panes use `@AppStorage`, so they update when Save lands. Revert reloads the
-    stored values. Do not bind the toggles straight to `@AppStorage` again or
-    changes will leak before saving.
+    panes use `@AppStorage`, so they update when Save lands. Save closes the
+    Settings window on success and stays open only when the login item needs
+    attention. Revert reloads the stored values. Do not bind the toggles
+    straight to `@AppStorage` again or changes will leak before saving.
 15. **Start at login.** `LaunchAtLogin` wraps `SMAppService.mainApp`.
     `isRegistered` includes `.requiresApproval` so the toggle stays on while
     macOS waits for the user in System Settings → General → Login Items.

@@ -411,3 +411,15 @@ Request: expose a "start at login" option.
 - The existing login item already points at `/Applications/islet.app`; bundle ID
   is unchanged, so the registration survives the rename.
 - Version 1.0.1.
+
+## Phase 18 — Save closes Settings (12 Nov 2026)
+
+Request: after pressing Save, close the Settings window.
+
+- `saveDraft()` applies the draft and login item, then calls
+  `closeSettingsWindow()` (`performClose` on the key window, falling back to the
+  window titled "islet Settings").
+- The window stays open only when the login item needs attention (error or
+  approval note); that message is also shown in the save bar.
+- Removed the transient "Saved" label, which is no longer visible.
+- Version 1.0.2.

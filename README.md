@@ -107,8 +107,8 @@ on first launch.
 6. **Tune the island.** Settings → **Behavior** (hover, battery, start at
    login) and **Motion** (calm animations).
 7. **Save your preferences.** Settings changes are drafted locally; press
-   **Save** (⌘S) to apply them, or **Revert** to discard. Nothing changes in the
-   island until you save.
+   **Save** (⌘S) to apply them and close the window, or **Revert** to discard.
+   Nothing changes in the island until you save.
 8. **Menu bar item:** show/hide, settings, start at login, quit. While music
    plays, a small waveform chip appears just left of the notch; click it to
    open the Music tab.
