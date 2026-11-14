@@ -133,7 +133,19 @@ struct SettingsView: View {
                     .textContentType(.URL)
                 TextField("Read-only email", text: $serverEmail)
                     .textContentType(.username)
-                SecureField("Password (leave blank to keep)", text: $serverPassword)
+                HStack(spacing: 8) {
+                    SecureField(
+                        server.publicConfig.hasPassword
+                            ? "Password (leave blank to keep)"
+                            : "Password",
+                        text: $serverPassword
+                    )
+                    Button("Paste") {
+                        pastePassword()
+                    }
+                    .font(.caption)
+                    .help("Paste the password from the clipboard")
+                }
                 TextField("Cloudflare Access Client ID (optional)", text: $serverAccessID)
                 SecureField("Access Client Secret (optional)", text: $serverAccessSecret)
 
@@ -283,6 +295,12 @@ struct SettingsView: View {
         }
     }
 
+    private func pastePassword() {
+        if let text = NSPasteboard.general.string(forType: .string) {
+            serverPassword = text
+        }
+    }
+
     private func saveServer() {
         server.save(
             baseURL: serverURL,
@@ -347,7 +365,7 @@ struct SettingsView: View {
     }
 
     private var version: String {
-        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.1"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1.2"
         return "v\(short)"
     }
 

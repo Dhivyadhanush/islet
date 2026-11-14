@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2 — 14 November 2026
+
+### Fixed
+
+- Settings text fields now support ⌘C/⌘V/⌘A. islet is an accessory app and had
+  no main menu, so the standard Edit key equivalents were never routed.
+- The Beszel password field has a visible **Paste** button as a fallback for
+  clipboard managers or environments where ⌘V is blocked.
+
 ## 1.1.1 — 12 November 2026
 
 ### Fixed

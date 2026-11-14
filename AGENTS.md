@@ -189,7 +189,12 @@ MAKE_DMG=1 ./build.sh                       # build/islet-<version>.dmg
     the environment, or `--beszel-password-stdin`. `--beszel-password` still
     works but warns: argv is visible to other local processes. Never add the
     password to logs or release notes.
-19. **Tests and CI.** `Tests/run.sh` builds the pure sources with a small
+19. **Settings text input.** islet is an accessory app with no visible menu bar,
+    so `applicationDidFinishLaunching` installs a main menu with an Edit submenu
+    (Undo/Redo/Cut/Copy/Paste/Select All). Without it, ⌘C/⌘V/⌘A are never routed
+    to the Settings text fields. Keep the **Paste** button next to the Beszel
+    password field as a fallback for clipboard managers and secure-input cases.
+20. **Tests and CI.** `Tests/run.sh` builds the pure sources with a small
     assert runner. Keep `BeszelParsing` free of AppKit/URLSession so it stays
     testable. CI runs the tests, `build.sh` and `--snapshot`; a `v*` tag runs
     `release.yml`, which builds the universal DMG and updates the tap when
